@@ -1,0 +1,85 @@
+    updateItems(item: Tabx[]){
+        // create a new all that keeps the same objects
+        // 
+        const all = new Map<string,Tabx>()
+        let sel = new Set<Tabx>()        
+        for (let o of item) {
+            const existing=this.all.get(o.rid)
+            if (existing) {
+                this.all.set(o.rid, existing)
+                if (existing.selected)
+                    sel.add(existing)
+            } else {
+                this.all.set(o.rid, o)
+            }
+        }
+
+        this.all = all
+        this.selected = sel
+        this.setTab(item);
+    }
+
+
+// tabs share a common database engine, they also see each tab's updates. this could probably be optimized.
+
+// the db context will always be global, is this just unnecessary abstraction to try and find it on the stack?
+// I guess the global context is the dbms, where this context is a specific database and login.
+// evreything in a site must come from the database, dglib, and the plugins. we should be able to build plugins with either datagrove or github experiences.
+
+// do we need a shared worker and a service worker? a service worker has a better defined lifetime.
+// chrome android doesn't support shared worker.
+
+
+// self.addEventListener('message', function (e) {
+//     self.postMessage(e.data);
+// }, false);
+
+
+// the user interface can rearrange the tabs, so it should ship a delta back to the database? how can we make this robust with races? where do we rebase?
+// note that this will eventually have multiple clients, do we want to track them all separately?
+
+export interface BranchSnapshot {
+    lsn: Lsn
+    table: {
+        [table: string]: ArraySnapshot<any>
+    }
+}
+
+// prosemirror is going to create a step and just toss it to the dbms blindly?
+// prosemirror wants to be able to see a failure, we need to let it.
+// these may be a special transaction. are other updates ok to push blindly, let shared worker transform them?
+
+// one lsn for the all the branches from client, then substitute with known lsn?
+// this seems ok locally but bad remotely.
+
+
+// here we need to keep track of the client's requested scans and update them whenever they change.
+
+// ScanMgr's can be shared, as in the case of the tab query
+// these can be shared 
+
+
+
+export class DgTable<V> {
+    keyOf: (v: V) => Uint8Array | undefined = () => undefined
+
+    data = new DgArray()
+}
+
+
+
+class BranchSnapshot {
+    table = new Map<string, TableSnapshot>()
+}
+// our table has ordinals
+class TableSnapshot {
+
+}
+
+// we have a theory that allows transactions across connections, but it has tradoffs.
+// branch may be at any historical snapshot, or any historical snapshot + proposed changes.
+export class RootBranch {
+    // the root branch needs to return the branch tabs.
+    tabState = new DgTable()
+}
+

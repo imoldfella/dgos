@@ -1,0 +1,44 @@
+import { Icon } from "solid-heroicons"
+import { chevronRight } from "solid-heroicons/solid"
+import { createSignal, For, Show } from "solid-js"
+//import { usePageState } from "./prevnext"
+import './toc2.css'
+
+
+
+// Summary can be at the top of the page, collapsed, or at the side if screen is wide enough
+export function Summary(props: { collapsed?: boolean }) {
+    const { sections } = usePageState()!;
+    const [collapsed, setCollapsed] = createSignal(props.collapsed || false);
+
+    return (
+        <div class="mb-4 py-2 px-4 text-neutral-400 dark:bg-solid-dark border border-solidlightitem rounded-md dark bg-solid-light z-50 ">
+            <button
+                onClick={() => setCollapsed((prev) => !prev)}
+                type="button"
+                class="w-full  flex items-center justify-between md:pointer-events-none"
+            >
+                Summary
+                <Icon path={chevronRight} class='w-6 h-6' />
+            </button>
+            <Show when={!collapsed()}>
+                <ol class="mt-2 list-none space-y-1">
+                    <For each={sections()}>
+                        {(item, index) => (
+                            <li class="text-base py-2 flex items-center gap-2 rounded hover:bg-solid-light hover:dark:bg-solid-darkbg px-2">
+
+                                <a class="font-semibold" href={"#" + item.href}>
+                                    {item.title}
+                                </a>
+                            </li>
+                        )}
+                    </For>
+                </ol>
+            </Show>
+        </div>
+    )
+}
+
+
+
+

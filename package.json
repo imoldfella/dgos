@@ -1,0 +1,17 @@
+{
+  "name": "dgos",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {},
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "workspaces": [
+    "packages/*"
+  ],
+  "devDependencies": {
+    "@playwright/test": "^1.29.0",
+    "playwright": "^1.29.0"
+  }
+}

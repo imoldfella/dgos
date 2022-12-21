@@ -1,0 +1,38 @@
+    addListener(fn: (tx: Tx) => void) {
+
+    }
+    constructor(config?: DbConfig) {
+        this.w = new SharedWorker(new URL('./shared', import.meta.url), {
+            type: 'module'
+        })
+
+        this.config = config || this.config
+
+        this.w.port.start();
+        this.w.port.onmessage = (e) => {
+            if (e.data) {
+                // if selected[0] is deleted, we need to pick some tab
+                const r = e.data as Rpc
+                switch (r.method) {
+                    case 'update':
+                        // some scans have changed. 
+                        break
+                    default:
+                        // this should be a reply to a transaction
+                        r.id
+                }
+            }
+        }
+    }
+
+
+    next = 1
+    async rpc(method: string, params: any) {
+        const id = this.next++
+        this.w.port.postMessage({
+            method: method,
+            id: id,
+            params: params
+        })
+    }
+    // 

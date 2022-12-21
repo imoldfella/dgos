@@ -1,0 +1,150 @@
+import { Bitset } from "../util/bitset"
+import { DiskPointer } from "./data"
+
+// a diskpointer with 53 bits and 6 bits of size class, but 16 bit min size is 
+function dpSizeClass(d: DiskPointer) {
+    return 1
+}
+
+// umbra allows 64 class sizes, up to 64K * 2^6 = 2^22 = 4MB.
+export const pageSize: number[] = []
+for (let i = 0; i < 64; i++) {
+    pageSize.push(64 * 1024 << i)
+}
+
+// these should be webassembly memoryss
+export class Buffer {
+    b = new SharedArrayBuffer(512 * 1024)
+}
+// pages can be 64K, 128K, 256K, or entire buffer (512K to 2GB)
+// how do pages point to other pages when they are not in the same segment?
+
+
+// a page pointer is number[2]
+// [0] = block, [1] = offset
+type PagePointer = number
+const nullPage = -1
+// I could overallocate by a page to have some tracking bits?
+// we can use 1 bit Per 64k to say if its an actual page or not. we might need 
+
+// this does not all webassembly code to determine pages, but this will generally use pointers anyway
+// we only need to scan the pages in order to checkpoint them.'
+
+// convenience wrapper to get 
+class Page {
+    constructor(public b: BufferPool, public offset: number) {
+
+    }
+}
+
+type Block = WebAssembly.Memory
+// we need 
+export class BufferPool {
+    vp = new Bitset()
+    // we might like to scan x% of the pool, but we need to track out the block is divided?
+    // there are 64 64 k blocks, we can mark the ones that aren't real pages.
+    // so at least two bits: dirty,clean, n/a
+    // how do we check point large pages then?
+    block: Block[] = []
+
+    // this should be linked through the page headers
+    free: PagePointer[] = pageSize.map(e => nullPage)
+
+    constructor() {
+        this.block.push(new WebAssembly.Memory({
+            initial: 64,  // 4mb to start.
+            maximum: 64 * 1024,
+            shared: true
+        }))
+    }
+
+    popFree(sizeClass: number): PagePointer {
+        const r = this.free[sizeClass]
+
+        return r
+    }
+    pushFree(sizeClass: number, p: PagePointer) {
+
+    }
+
+    fetch(d: DiskPointer) {
+        this.alloc(dpSizeClass(d))
+    }
+    dirty(p: Page) {
+
+    }
+    pin(p: Page) {
+
+    }
+    unpin(p: Page) {
+
+    }
+    evictSome() {
+        // randomly pick some pages to cool. reject page if it has in memory children
+        // how do we find pages? do we scan the bitmap of valid pages? pick the closest bit? keep a set of candidate pages?
+
+    }
+    async loadWasm(m: WebAssembly.Memory) {
+        await WebAssembly.instantiateStreaming(fetch("memory.wasm"), {
+            // js: m
+        })
+    }
+    split(sizeClass: number, outof: number): Page {
+        if (sizeClass == outof) return this.free[sizeClass].pop()!
+        // split the page in half, maybe call recursively until right size.
+        let p = this.free[outof].pop()!
+        p.size--
+        this.free[outof - 1].push(
+            p,
+            new Page(p.b, p.size, pageSize[p.size])
+        )
+        return this.split(sizeClass, outof - 1)
+    }
+    dealloc(p: Page) {
+        if (p.size < pageSize.length) {
+            this.free[p.size].push(p)
+        } else {
+
+        }
+    }
+
+    // grow the webassembly memory and add a 4mb block
+    createBlock() {
+        const mem = this.block[0]
+        const offset = mem.buffer.byteLength
+        mem.grow(64)
+        this.free[pageSize.length - 1].push(new Page(
+            mem,
+            pageSize.length - 1, offset))
+
+    }
+    alloc(sizeClass: number): Page {
+        let m: WebAssembly.Memory
+        let offset = 0
+        let size = sizeClass < pageSize.length ? pageSize[sizeClass] : sizeClass
+        if (sizeClass < pageSize.length) {
+            // take the correct size or a bigger one.
+            for (let i = sizeClass + 1; i < pageSize.length; i++) {
+                if (this.free[sizeClass].length) continue
+                return this.split(sizeClass, i)
+            }
+            // add a new block and take a piece of it.
+            this.createBlock();
+            return this.split(sizeClass, pageSize.length - 1)
+        } else {
+            // dedicated array buffer - how do we point to it?
+            return new Page(new WebAssembly.Memory({
+                initial: 1 << sizeClass,
+                maximum: 1 << sizeClass,
+                shared: true
+            }), sizeClass, 0)
+        }
+    }
+    delete(d: DiskPointer) {
+
+    }
+    flushAll() {
+
+    }
+}
+

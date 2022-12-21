@@ -1,0 +1,95 @@
+import { Store, StoreFile } from "./data";
+import { Log } from "../tree/log";
+import { BufferPool, pageSize } from "../tree/pool";
+import { Tree } from "../tree/tree";
+
+// we need a treetree root; fixed page or pointer in master record?
+export class Head {
+    constructor(public d: Float64Array) {
+    }
+
+    root = () => this.d[0]
+    checkpoint = () => this.d[0]
+}
+
+
+export class Result {
+}
+export class Tx {
+
+}
+interface Schema {
+
+}
+interface Query {
+
+}
+// the schema can change as we add plugins, 
+// database is split into size classes. the pageid must indicate the size class since it can't change.
+// pages > 512k are in their own files
+export class Dbb {
+    constructor(public b: BufferPool, public log: Log, public root: Tree, public h: StoreFile[]) {
+
+    }
+
+    define(port: MessagePort, schema: Schema) {
+
+    }
+    // get a write lock in order to checkpoint
+    async checkpointSome() {
+
+    }
+
+    // we want to evict some pages to keep pages from
+
+    // ideally this produces a stream/triple buffer instead; but sendPort has no concept of back pressure.
+    // we can rate limit if it becomes a problem.
+    // would it be worth two round trips to be able to skip some 'frames'?
+    // we could use animation frame and poll sharedbuffer, but that seems inefficient.
+    // we could go back to the listdelta
+    // prosemirror wants its own queue? if it didn't, ui could get laggy.
+    subscribe(port: MessagePort, r: Query[]) {
+
+    }
+    unsubscribe(port: MessagePort) {
+
+    }
+    publish(port: MessagePort, tx: Tx) {
+        // 
+    }
+}
+
+// we need a master record, and this record will tell us if we 
+export async function createDbb(store: Store): Promise<Dbb> {
+    // recover or create new
+    const db: StoreFile[] = []
+    for (let i = 0; i < pageSize.length; i++) {
+        db.push(await store.open(`db${i}`))
+    }
+    const empty = (await db[0].getSize()) == 0
+    if (empty) {
+
+    } else {
+
+    }
+    const pool = new BufferPool()
+    const log = await createLog(store)
+    const page = await pool.alloc(0)
+    const tree = new Tree(page)
+
+    const r = new Dbb(
+        pool,
+        log,
+        tree,
+        db
+    )
+    // restore here?
+    // restore will copy values from the log into the page file(s)
+
+    return r
+
+}
+
+function createLog(store: Store) : Log {
+    throw new Error("Function not implemented.");
+}

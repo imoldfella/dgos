@@ -1,0 +1,89 @@
+import { createStore } from 'solid-js/store'
+import {  Db } from './db'
+
+// used for a sitemap and vtabs
+// create table x (f1, f2, ) primary (f1, +)
+// + a primary key creates an array where the slot is part of the key.
+// allows index operations
+
+// a site map is create table dg_sitemap (id, name, indent, link?) primary(+)
+// create table dg_l10n(lang, id, template)
+// branch links dg://x  can lookup the avatar for that branch in their cache?
+
+// settings holds things like open/close
+// create table branch_cache( id, link, name, avatar, notify, tagged, settings)
+
+// create table link_cache( link, name, avatar, notify, taggedSeen, tagged, muted)
+
+// a query (materialized?) shows the join of different tables 
+// each query is a store, a set of signals. what if it was a context though?
+
+// should return a store, but also trigger suspense until store is available the first time.
+// a store is a set of signals
+
+// basically a tree tile.
+export interface LinkEntry {
+    indent: number
+    avatar?: string
+    link: string
+    title: string
+    notifyCount: number
+    childCount: number
+    open: boolean
+    animatedOffset: number
+    height: number
+}
+
+// the general patter  is like an async map
+// we could map a message stream? otoh we could have some kind of context/store that defined the entirety of the apps data
+// this will have trouble with maps though?
+// newGetter = createResource(signalgetter, async (s)=>newvalue)
+// export function createBranchmap(branch: Branch) {
+//     return createStore(Query<LinkEntry>)
+// }
+
+// export function createSitemap(branch: Branch) {
+//     return createStore(Query<LinkEntry>)
+// }
+
+export class DgArray<Value>  {
+    insert(index: number, value: Value): DgArray<Value> {
+        return this
+    }
+    remove(index: number, end: number): DgArray<Value> {
+        return this
+    }
+}
+// key is level + ordinal
+export class Query<T> {
+    constructor(public db: Db) {
+    }
+    measure: (x: T) => number = () => 1
+    active = 0
+    selected = new Set<number>
+    data: DgArray<T>[] = []
+
+
+    insert(index: number, data: T[]) {
+
+    }
+
+    visitByIndex(from: number, to: number) {
+
+    }
+    visitByMeasure(from: number, to: number) {
+
+    }
+
+    // lens transactions; these will update the database which in turn will update the screen.
+    // we could also insert a tree, but here we need the child count
+    async insertChild(index: number, data: T[]) {
+    }
+    async insertTree(index: number, data: T[], childCount: number[]) {
+        const tx = this.db.begin()
+
+        // tx.commit();
+    }
+
+    // 
+}

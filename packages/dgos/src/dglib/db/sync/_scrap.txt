@@ -1,0 +1,54 @@
+
+// we need an interface to the database, especially to ephemeral/temp tables like 
+// create table online(serverurl, online)
+
+// maybe database can implement transaction protocol for immediate 
+
+// upsert online(url, status) values (:url, :status)
+
+
+
+
+
+/*
+async readLog(b: BranchHandle) {
+    // if secret, decrypt with secret key. note that when this key is rotated (user is evicted), we need to provide a new key to each reader. maybe a special grant stream(s)? what about broadcast encryption?
+    // confirm that was written by valid writer: signed by author, signed(admin, grant(write,author))
+}
+// heartbeat the server with most recent message that it sent us.
+// if a message was lost, the server will notice.
+*/
+
+/*
+// clients connect to the sync service in order to get server status
+// as the server status changes we update the clients. it doesn't take publications.
+// this runs as its own shared worker/client so that it can pub/sub normally
+// shared worker so that we share one sync for all tabs
+interface SharedWorkerGlobalScope {
+    onconnect: (event: MessageEvent) => void;
+}
+const _self: SharedWorkerGlobalScope = self as any;
+let sync = new SyncService()
+_self.onconnect = function (e) {
+    new SynService
+}
+*/
+
+
+
+/*
+   started = false
+    writing = false
+    waiting: MessagePort[] = []
+    writeQ: Tx[] = []
+    log: Tx[] = []
+     schema = new Map<string, SchemaMgr>()
+    table = new Map<string, Table>()
+       predictedLsn = new Map<BranchId, number>
+
+    async getBranchLsn(branch: BranchId) {
+        return this.predictedLsn.get(branch) ?? 0
+    }
+    scanChanged = new Set<ScanMgr>
+    sandbox = new Map<number, Sandbox>()
+*/
