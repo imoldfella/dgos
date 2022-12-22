@@ -14,7 +14,7 @@ export class LogHeader {
     mask = 0
     sm: Int32Array
     constructor(m: Mem) {
-        this.sm = m.allocLines(1)
+        this.sm = m.allocTls(1)
         this.sm64 = new BigUint64Array(this.sm)
         this.buffer = this.sm.slice(8)
         this.mask = this.buffer.length - 1
