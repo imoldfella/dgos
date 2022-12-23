@@ -2,10 +2,13 @@ import { test, expect } from '@playwright/test';
 import crypto from '@trust/webcrypto';
 //import * as fs from 'fs'
 import * as th from '../packages/dgos/src/dglib/thread'
+import { Mem, createMem } from '../packages/dgos/src/dglib/thread';
 
 
 test('ring', async ({ page }) => {
-  const mem = new th.Mem()
+  const memv = createMem(1)
+  const mem = new Mem(memv[0])
+
   // ring is a clonable thing you can send to other workers
   const ring = th.createRingBuffer(mem)
   const entry = th.ringEntry(ring)

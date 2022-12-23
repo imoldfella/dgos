@@ -48,8 +48,11 @@ interface MemData {
     mem: WebAssembly.Memory,
     pid: number
 }
+
+// rough plan is nworkers represent a pair of workers; one io and and one compute.
+// this would normall be called from a shared worker
 export function createMem(nworkers: number): MemData[] {
-    const pages = 16 * 1024
+    const pages = 16 * 1024 // 1gb
     const mem = new WebAssembly.Memory({
         initial: pages, // 64K *64K = 4GB
         maximum: pages,

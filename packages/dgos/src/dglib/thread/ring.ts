@@ -77,3 +77,5 @@ export async function ringReadAsync(r: RingBuffer, e: Uint32Array): Promise<void
         await Atomics.waitAsync(new Int32Array(r.write.buffer), ptrSlot, write)
     }
 }
+
+// can I make thise work for multiple SPSC queues? Not sharing a cacheline should be faster than atomic add.
