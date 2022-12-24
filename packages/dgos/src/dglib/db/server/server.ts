@@ -18,25 +18,21 @@ export class QuerySvr<T> implements Query<T> {
     close() { }
 }
 
-export class StatementSvr<P,T> implements Statement<P,T>  {
+export class StatementSvr<P, T> implements Statement<P, T>  {
     exec(tx: Tx, props: P): Query<T> {
         throw new Error("Method not implemented.");
     }
 
 }
+// the sql compiler needs to be an optional module, its like to be large.
+
 export class DbmsSvr implements Dbms {
 
-    // we need an interface that we can return through the proxy
-
-    async prepare<P,T>(sql: string): Promise<Statement<P,T> > {
-        // we can't
-        return new StatementSvr<P,T>()
-    }
     async begin(): Promise<Tx> {
         return new TxSvr()
     }
 
-    async query<P,T>(stmt: Statement<P,T> , props: T): Promise<Query<T>> {
+    async query<P, T>(stmt: Statement<P, T>, props: T): Promise<Query<T>> {
         return new QuerySvr()
     }
     api<T>(a: T) {
