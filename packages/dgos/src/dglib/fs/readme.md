@@ -1,4 +1,9 @@
 
+maybe work just send opfs or idb dynamically? would potentially save sending idb. We could also get rid of idb although its not big.
+
+
+
+
 // we need a log worker whether we have opfs or idb to implement group commit
 // the log worker needs to a spsc queue with each worker and a common bell
 // data read/write is a little different, but a worker currently is the best strategy for opfs because writes in opfs are synchronous. queues are cheaper than locks?

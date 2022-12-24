@@ -1,15 +1,9 @@
 import { Mem } from '../thread/mem'
-import { Op, Req } from './data'
+import { newReq, Op, Req } from './data'
 
-const filetable = new Map<number, OpenFile>()
+const filetable = new Map<number, FileSystemSyncAccessHandle>()
 let shared: ArrayBuffer
 let root: FileSystemDirectoryHandle
-class OpenFile {
-    constructor(public fh: FileSystemHandle, public fs: FileSystemSyncAccessHandle) {
-    }
-}
-
-
 
 export interface FileSystemSyncAccessHandle {
     truncate(len: number): Promise<void>
@@ -26,54 +20,65 @@ export interface FileSystemSyncAccessHandle {
 function getBuffer(r: Req) {
     return shared.slice(r.begin, r.end)
 }
-function getHandle(n: number) {
-    return filetable.get(n)!.fh
-}
-function getAccess(n: number) {
-    return filetable.get(n)!.fs
+
+async function getAccess(n: number) {
+    let a =  filetable.get(n)
+    if (!a) {
+       // note that create here is "create if necessary"
+       const h = await root.getFileHandle(`${n}`,{create: true})
+       a = (h as any).createSyncAccessHandle() as FileSystemSyncAccessHandle  
+       filetable.set(n,a)
+    }
+    return a
 }
 
 function complete(r: Req, result: number) {
     postMessage([r.userdata, result])
 }
 
-async function exec(r: Req) {
-    switch (r.op) {
-        case Op.move:
-            // safari claims this, but not on mdn?
-            // getHandle(r.fh).move(`${r.arg1})
-            break
-        case Op.remove:
-            await root.removeEntry(`${r.fh}`)
-            break
-        case Op.create:
-            await root.getFileHandle(`${r.fh}`, { "create": true })
-            break
-        case Op.open:
-            await root.getFileHandle(`${r.fh}`)
-            break
-        case Op.truncate:
-            await getAccess(r.fh).truncate(r.at)
-            break
-        case Op.flush:
-            await getAccess(r.fh).flush()
-            break
-        case Op.close:
-            await getAccess(r.fh).close()
-            break
-        case Op.getSize:
-            const rx = await getAccess(r.fh).getSize()
-            complete(r, rx)
-            return
-        case Op.read:
-            const buffer =
-                await getAccess(r.fh).read(getBuffer(r), { at: r.at })
-            break
-        case Op.write:
-            await getAccess(r.fh).write(getBuffer(r), { at: r.at })
-            break
+async function exec(rv: Float64Array, cmv: Float64Array) {
+    for (let i=0; i<rv.length; i+=8) {
+      const r =  new Req(rv.slice(i*8,i*8+8))
+        let v = 0
+        try{
+            let a : FileSystemSyncAccessHandle
+            if (r.fh) a = await getAccess(r.fh)
+            switch (r.op) {
+                case Op.nuke:
+                    // not clear that there is any security here!
+                    // probably not. It seems likely that browsers will not erase the presence. It will be better to rebuild a base presense, but even then, its not clear that we can every trust a browser to be private about anything.
+                    // note assumption that files are all open!!!! firefox does not support entries or values (yet?) 
+                    for (let o in filetable.keys()){
+                        root.removeEntry(`${o}`)
+                    }
+                    filetable.clear()
+                case Op.truncate:
+                    await a!.truncate(r.at)
+                    break
+                case Op.flush:
+                    await a!.flush()
+                    break
+                case Op.close:
+                    await a!.close()
+                    filetable.delete(r.fh)
+                    break
+                case Op.getSize:
+                    v = await a!.getSize()
+                    return
+                case Op.read:
+                    const buffer =
+                        await a!.read(getBuffer(r), { at: r.at })
+                    break
+                case Op.write:
+                    await a!.write(getBuffer(r), { at: r.at })
+                    break
+            }
+        } catch(e){
+           v=-1
+        }
+        cmv[i*2]=r.userdata
+        cmv[i*2+1] = 0
     }
-    complete(r, 0)
 }
 
 onmessage = (e) => {
@@ -82,13 +87,17 @@ onmessage = (e) => {
         root = await navigator.storage.getDirectory();
     }
 
+    // note that each entry is already tagged with userdata
     init(e.data).then(() => {
         onmessage = (e) => {
-            const r = new Req(e.data)
-            exec(r).catch(() => complete(r, -1))
+            const rq = e.data as Float64Array
+            const cm = new Float64Array(rq.length >> 2)
+            exec(rq,cm)
+            postMessage(cm)
         }
     })
 }
+
 
 
 /*

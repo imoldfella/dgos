@@ -24,7 +24,7 @@
 */
 
 export enum Op {
-    init, remove, create, open, truncate, flush, close, getSize, read, write, move
+    nuke,  truncate, flush, close, getSize, read, write
 }
 interface OpfsRq {
     userdata: number
@@ -34,9 +34,26 @@ interface OpfsRq {
     begin: number
     end: number
 }
-export interface Fs {
-    submit(x: Float64Array, y: Float64Array): Promise<void>
-    submitv(start: number, end: number, result: number): Promise<void>
+type Completer = (baton: number, result: number)=> Promise<void>
+/*
+    tag = 42
+    m = new Map<number, [resolve: (a: any) => void, reject: (e: any) => void]>()
+            const [userdata, result] = e.data
+            const o = this.m.get(userdata)!
+            this.m.delete(userdata)
+            o[0](result)
+*/
+export abstract class Fs {
+    oncomplete?:  Completer
+    notify(x: Float64Array) {
+        if (this.oncomplete){
+            for (let i=0; i<x.length; i+=2)
+                this.oncomplete(x[i*2], x[i*2+1])
+        }
+    }
+    abstract submit(x: Float64Array):void
+    // future work? send the requests in shared memory is probably faster and easier for wasm
+    // abstract submitv(start: number, end: number):void
 }
 export function pack(o: OpfsRq[], to: Float64Array) {
     for (let i = 0; i < o.length; i++) {
@@ -61,4 +78,13 @@ export class Req {
     get at() { return this.nv[3] }
     get begin() { return this.nv[4] }
     get end() { return this.nv[5] }
+
+}
+export function newReq(f: Float64Array) : Req[] {
+    const r = new Array<Req>(f.length>>3)
+
+    r.forEach((e,i)=> {
+        r[i] =  new Req(f.slice(i*8,i*8+8))
+    })
+    return r
 }

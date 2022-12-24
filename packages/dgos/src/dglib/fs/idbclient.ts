@@ -7,47 +7,60 @@ type BlobRange = Uint32Array
 // low high
 type DiskPointer = Uint32Array
 
-function onerror() {
-  console.log("error!!")
-}
-
-export class IdbFs implements Fs {
-  constructor(public db: IDBDatabase, public mem: ArrayBuffer) {
+export class IdbFs extends Fs {
+  constructor(public db: idb.IDBPDatabase, public mem: Uint32Array) {
+    super()
   }
-  async submit(x: Float64Array, y: Float64Array): Promise<void> {
-    for (let i = 0; i < x.length; i += 8) {
-      const r = new Req(x.slice(i, i + 8))
-      switch (r.op) {
-        case Op.read:
-          const key = [r.fh, r.at]
-          const store = this.db.transaction("blob").objectStore("blob");
-          const value = await store.get(key);
+  getBuffer(r: Req) {
+    return this.mem.slice(r.begin, r.end)
+  }
 
+    async  submit(rv: Float64Array) {
+      const cmv = new Float64Array(rv.length>>2)
+      for (let i=0; i<rv.length; i+=8) {
+        const r =  new Req(rv.slice(i*8,i*8+8))
+          let v = 0
+          try{
+              // a file here is a range [ fh, 0] to [fh, Infinity]
+              // store in 64k blocks, this is on the client to enforce
+              // but we could maybe throw here?
+              switch (r.op) {
+                  case Op.nuke:
+                      // not clear that there is any security here!
+                      // probably not. It seems unlikely that browsers will erase securely. It will be better to rebuild a base presense, but even then, its not clear that we can every trust a browser to be private about anything.
+                    idb.deleteDB('dg')
+                    break
+                  case Op.truncate:
+                      await this.db.delete('dg',  IDBKeyRange.bound([r.fh, 0],[r.fh,r.at]))
+                      break
+                  case Op.flush:
+                  case Op.close:
+                      break
+                  case Op.getSize:
+                      return
+                  case Op.read:
+                      const v = await this.db.get('dg',[r.fh,r.at])
+                      this.getBuffer(r).set(v as Uint32Array)
+                      break
+                  case Op.write:
+                      await this.db.put('dg',[r.fh,r.at], this.getBuffer(r))
+                      break
+              }
+          } catch(e){
+            v=-1
+          }
+          cmv[i*2]=r.userdata
+          cmv[i*2+1] = 0
       }
-    }
+      super.notify(cmv)
   }
-  async submitv(start: number, end: number, result: number): Promise<void> {
-    throw new Error("Method not implemented.")
-  }
-
 }
 
 export async function useIdbFs(m: ArrayBuffer): Promise<IdbFs> {
-  const r = indexedDB.open("datagrove", 1)
-  const rx = new Promise<IdbFs>((resolve, reject) => {
-    let db: IDBDatabase
-    r.onerror = onerror
-    r.onsuccess = (event) => {
-      db = r.result;
-      resolve(new IdbFs(db, m))
-    }
-    r.onupgradeneeded = (e) => {
-      // need later?
-      // if(db.objectStoreNames.contains("blob")) {
-      //     db.deleteObjectStore("blob");
-      // }
-      db.createObjectStore("blob");
-    }
-  })
-  return rx
+  const db = await idb.openDB('dg', 1, {
+    upgrade(db) {
+      db.createObjectStore('dg');
+    },
+  });
+  return new IdbFs(db,new Uint32Array(m))
 }
