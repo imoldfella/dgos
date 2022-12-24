@@ -1,4 +1,5 @@
-import { Store } from "./data"
+import { Fs, Op, Req } from "./data"
+import idb from 'idb'
 
 
 // low high low high
@@ -9,30 +10,36 @@ type DiskPointer = Uint32Array
 function onerror() {
   console.log("error!!")
 }
-// store 64K blobs, 
-export class IdbStore implements Store {
-  constructor(public db: IDBDatabase) {
+
+export class IdbFs implements Fs {
+  constructor(public db: IDBDatabase, public mem: ArrayBuffer) {
   }
-  readPage(d: Uint32Array, target: Uint32Array, then: (d: Uint32Array, status: number) => void): void {
-    throw new Error('Method not implemented.')
+  async submit(x: Float64Array, y: Float64Array): Promise<void> {
+    for (let i = 0; i < x.length; i += 8) {
+      const r = new Req(x.slice(i, i + 8))
+      switch (r.op) {
+        case Op.read:
+          const key = [r.fh, r.at]
+          const store = this.db.transaction("blob").objectStore("blob");
+          const value = await store.get(key);
+
+      }
+    }
   }
-  writePage(d: Uint32Array, target: Uint32Array, then: (d: Uint32Array, status: number) => void): void {
-    throw new Error('Method not implemented.')
-  }
-  log(): Promise<Log> {
-    throw new Error('Method not implemented.')
+  async submitv(start: number, end: number, result: number): Promise<void> {
+    throw new Error("Method not implemented.")
   }
 
 }
 
-export async function openIdbStore(): Promise<Store> {
+export async function useIdbFs(m: ArrayBuffer): Promise<IdbFs> {
   const r = indexedDB.open("datagrove", 1)
-  const rx = new Promise<Store>((resolve, reject) => {
+  const rx = new Promise<IdbFs>((resolve, reject) => {
     let db: IDBDatabase
     r.onerror = onerror
     r.onsuccess = (event) => {
       db = r.result;
-      resolve(new IdbStore(db))
+      resolve(new IdbFs(db, m))
     }
     r.onupgradeneeded = (e) => {
       // need later?
@@ -43,13 +50,4 @@ export async function openIdbStore(): Promise<Store> {
     }
   })
   return rx
-}
-
-
-// typically we might want to read the header, then read just the range of columns that we need. only used on parquet format. For these the parquet file is stored in a sequence of 64K blobs.
-export function partialReadPage() {
-  const getBlobs = (x: BlobRange, target: Uint32Array) => {
-
-  }
-
 }

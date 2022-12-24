@@ -1,21 +1,14 @@
-export { }
 import { Mem } from '../thread/mem'
-import { RingBuffer, ringEntry, ringRead } from '../thread/ring'
-import { Op } from './data'
+import { Op, Req } from './data'
 
-
-
-class Req {
-   nv: Float64Array
-   constructor(public data: Uint32Array){
-    this.nv = new Float64Array(data.buffer)
-   }
-   get userdata() { return this.nv[0]}
-   get op () { return this.data[1] }
-   get fh() { return this.data[2] }
-   get arg1() { return this.data[3] }
-   get arg2() { return this.data[4] }
+const filetable = new Map<number, OpenFile>()
+let shared: ArrayBuffer
+let root: FileSystemDirectoryHandle
+class OpenFile {
+    constructor(public fh: FileSystemHandle, public fs: FileSystemSyncAccessHandle) {
+    }
 }
+
 
 
 export interface FileSystemSyncAccessHandle {
@@ -30,11 +23,8 @@ export interface FileSystemSyncAccessHandle {
 // it might be cheaper to pass the request in shared ram?
 // possibly this passes a number representing an offset in ram
 // or a Uint32(16) so we can represent a uring style request?
-const filetable = new Map<number,OpenFile>()
-let root: FileSystemDirectoryHandle
-class OpenFile {
-    constructor(public fh: FileSystemHandle, public fs: FileSystemSyncAccessHandle){
-    }
+function getBuffer(r: Req) {
+    return shared.slice(r.begin, r.end)
 }
 function getHandle(n: number) {
     return filetable.get(n)!.fh
@@ -43,30 +33,27 @@ function getAccess(n: number) {
     return filetable.get(n)!.fs
 }
 
-function complete(r: Req, result: number ){
-    postMessage( [r.userdata, result])
+function complete(r: Req, result: number) {
+    postMessage([r.userdata, result])
 }
 
 async function exec(r: Req) {
     switch (r.op) {
-        case Op.init: 
-             root = await navigator.storage.getDirectory()
-            break
         case Op.move:
             // safari claims this, but not on mdn?
-        // getHandle(r.fh).move(`${r.arg1})
+            // getHandle(r.fh).move(`${r.arg1})
             break
         case Op.remove:
             await root.removeEntry(`${r.fh}`)
             break
         case Op.create:
-            await root.getFileHandle(`${r.fh}`, { "create": true})
+            await root.getFileHandle(`${r.fh}`, { "create": true })
             break
         case Op.open:
             await root.getFileHandle(`${r.fh}`)
             break
         case Op.truncate:
-            await getAccess(r.fh).truncate(r.arg1)
+            await getAccess(r.fh).truncate(r.at)
             break
         case Op.flush:
             await getAccess(r.fh).flush()
@@ -76,22 +63,31 @@ async function exec(r: Req) {
             break
         case Op.getSize:
             const rx = await getAccess(r.fh).getSize()
-            complete(r,rx)
+            complete(r, rx)
             return
         case Op.read:
-            const buffer = new ArrayBuffer(0)
-            await getAccess(r.fh).read(buffer, { at:r.arg2})
+            const buffer =
+                await getAccess(r.fh).read(getBuffer(r), { at: r.at })
             break
         case Op.write:
-            const buffer2 = new ArrayBuffer(0)
-            await getAccess(r.fh).write(buffer2, {at: r.arg2})
+            await getAccess(r.fh).write(getBuffer(r), { at: r.at })
             break
     }
-    complete(r,0)
+    complete(r, 0)
 }
+
 onmessage = (e) => {
-    const r = new Req(e.data)
-    exec(r).catch(()=> complete(r, -1))
+    async function init(m: ArrayBuffer) {
+        shared = m
+        root = await navigator.storage.getDirectory();
+    }
+
+    init(e.data).then(() => {
+        onmessage = (e) => {
+            const r = new Req(e.data)
+            exec(r).catch(() => complete(r, -1))
+        }
+    })
 }
 
 

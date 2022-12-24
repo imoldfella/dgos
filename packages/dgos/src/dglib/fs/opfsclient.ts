@@ -5,43 +5,32 @@ import { Fs, Op } from "./data"
 
 // this is just a proxy that sends requests to the worker using a SPSC or postmessage
 
-export class Opfs extends Fs {
-    remove(fh: number): Promise<void> {
-        throw new Error("Method not implemented.")
-    }
-    create(fh: number): Promise<number> {
-        throw new Error("Method not implemented.")
-    }
-    open(fh: number): Promise<number> {
-        throw new Error("Method not implemented.")
-    }
-    truncate(fh: number, len: number): Promise<void> {
-        throw new Error("Method not implemented.")
-    }
-    flush(fh: number): Promise<void> {
-        throw new Error("Method not implemented.")
-    }
-    close(fh: number): Promise<void> {
-        throw new Error("Method not implemented.")
-    }
-    getSize(fh: number): Promise<number> {
-        throw new Error("Method not implemented.")
-    }
-    read(fh: number, index: number[], page: Uint32Array[]): Promise<void> {
-        throw new Error("Method not implemented.")
-    }
-    write(fh: number, index: number[], page: Uint32Array[]): Promise<void> {
-        throw new Error("Method not implemented.")
-    }
-    constructor(public rpc: RpcClient){
-        super()
-    }
-    
 
+
+export class Opfs implements Fs {
+    submit(x: Float64Array, y: Float64Array): Promise<void> {
+        throw new Error("Method not implemented.")
+    }
+    submitv(start: number, end: number, result: number): Promise<void> {
+        throw new Error("Method not implemented.")
+    }
+    tag = 42
+    m = new Map<number, [resolve: (a: any) => void, reject: (e: any) => void]>()
+
+    constructor(public w: Worker) {
+        w.onmessage = ((e) => {
+            const [userdata, result] = e.data
+            const o = this.m.get(userdata)!
+            this.m.delete(userdata)
+            o[0](result)
+        })
+    }
 }
 
 
 export async function useOpfs(m: MemDb) {
-    const w =  worker(new URL('./walworker', import.meta.url))
-   return w.ask('init', m)
+    const w = new Worker(new URL('./opfsworker', import.meta.url))
+    w.postMessage(m.mem.mem.mem.buffer)
+
+    return new Opfs(w)
 }
