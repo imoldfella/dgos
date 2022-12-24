@@ -1,8 +1,8 @@
 import { test, expect } from '@playwright/test';
 import crypto from '@trust/webcrypto';
 //import * as fs from 'fs'
-import * as th from '../packages/dgos/src/dglib/thread'
-import { Mem, createMem } from '../packages/dgos/src/dglib/thread';
+import * as th from '.'
+import { Mem, createMem } from '.';
 
 
 test('ring', async ({ page }) => {

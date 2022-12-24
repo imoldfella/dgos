@@ -1,20 +1,23 @@
-export { }
-import Comlink from 'comlink'
-import { Config, Options, Shared } from './data';
+import {  DgguiShared } from './data'
+import { createDbms } from  '../dglib/db/server'
+
+// top level await - ok? or wrap?
+let dbms = await createDbms();
+
+// you can implement a "server" api here (it all runs locally, but shared across tabs)
+// define all server api here, per the interface in data.
+dbms.api<DgguiShared>({
+    double(value: number) { return value * 2}
+});
+
+// you can extend sql here with user defined functions and virtual tables.
+// you can also add official extensions here like map
+dbms.table({});
+dbms.formula({});
 
 
-// this is the shared worker for dggui
-
-const obj: Shared = {
-    double: (value: number) => value * 2,
-
-    // return a config that can be used to build a store
-    config: (opts: Options) => {
-        let c = opts
-        return {} as Config
-    }
-}
-
-Comlink.expose(obj, self as any);
-
-
+(self as any).onconnect = function (event: any) {
+    const port = event.ports[0];
+    dbms.onconnect(port)
+};
+  

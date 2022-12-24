@@ -1,18 +1,8 @@
 
-// send options to get a config, use config to create a Db to use
-export interface Options {
-}
-export interface Config {
+// having the interface in a separate file lets you keep it the same on both sides
 
-}
-
-export class Db {
-    constructor(public config: Config) { }
-}
-
-export interface Shared {
+export interface DgguiShared {
     double(_: number): number
-    config(o: Options): Config
 }
 
 // use like this 

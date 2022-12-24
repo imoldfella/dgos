@@ -6,6 +6,13 @@
 
 // tradeoff of whether to map a log to a partition: more concurrency = potentially bigger lock problem
 
+// these are proxied to the shared server worker.
+export interface ClientApi {
+ 
+
+}
+
+
 export type Rid = string
 export type bstr = Uint8Array
 export type BranchId = string
