@@ -1,18 +1,18 @@
 import { test, expect } from '@playwright/test'
-import { createDbms } from '../dglib/db/server';
+import { createDbms } from '../dglib/db/server/server';
 
 test('', async() => {
     const dbms = await createDbms();
 
     // the main thing we want to do is submit transactions and la
-    const stmt = dbms.prepare('select')
+    const stmt = await dbms.prepare<any,any>('select')
 
     // each query acts as a listener as well? or 
-    const q = await dbms.query<{}>(stmt, {} ) 
+    const q = await dbms.query<{},{}>(stmt, {} ) 
     q.addListener(()=>{})
     q.close()
 
-    const tx = dbms.begin()
+    const tx = await dbms.begin()
 
     const h = stmt.exec(tx)
 

@@ -1,5 +1,5 @@
 import {  DgguiShared } from './data'
-import { createDbms } from  '../dglib/db/server'
+import { createDbms } from  '../dglib/db/server/server'
 
 // top level await - ok? or wrap?
 let dbms = await createDbms();

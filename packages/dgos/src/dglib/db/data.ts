@@ -7,27 +7,27 @@
 // tradeoff of whether to map a log to a partition: more concurrency = potentially bigger lock problem
 
 export interface Dbms {
-    prepare(sql: string): Promise<Statement>
+    prepare<P,T>(sql: string): Promise<Statement<P,T>>
     begin(): Promise<Tx>
-    query<T>(stmt: Statement, props: T): Promise<Query>
+    query<P,T>(stmt: Statement<P,T>, props: T): Promise<Query<T>>
 }
 // we need interfaces that can be shipped to another worker.
-export interface Statement {
 
-}
-export interface Query {
+export interface Query<T=any> {
     // sometimes we want the delta, or always provide the delta?
     // it probably computed anyway?
     addListener(fn: () => void): void
     removeListener(fn: any): void
     close(): void
+
+    forEach(fn: (e: T)=>void ):void
 }
 export interface Tx {
     commit(): Promise<boolean>
 }
 
-export interface Statement {
-
+export interface Statement<P=any,T=any> {
+    exec(tx: Tx, props?: P) : Query<T>
 }
 
 
