@@ -1,5 +1,5 @@
-import { MemDb } from "../db/worker/data"
-import { RpcClient, worker } from "../thread/worker_rpc"
+import { MemDb } from "../worker/data"
+import { RpcClient, worker } from "../../thread/worker_rpc"
 import { Fs, Op } from "./data"
 
 
@@ -15,9 +15,13 @@ export class Opfs extends Fs {
     }
 }
 
-export async function useOpfs(m: MemDb) {
+export async function useOpfs(m: ArrayBuffer): Promise<Opfs | null> {
     const w = new Worker(new URL('./opfsworker', import.meta.url))
-    w.postMessage(m.mem.mem.mem.buffer)
+    w.postMessage(m)
+    return new Promise((resolve) => {
+        w.onmessage = ((e) => {
+            resolve(e.data ? new Opfs(w) : null)
+        })
+    })
 
-    return new Opfs(w)
 }

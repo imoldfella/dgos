@@ -1,5 +1,3 @@
-import { FileSystemSyncAccessHandle, getAccess } from "../../opfs/opfs"
-import { Mem } from "../../thread/mem"
 
 
 enum Slot {
@@ -16,6 +14,8 @@ export class MemDb {
     constructor() {
         this.u64 = new BigInt64Array(this.mem.mem.buffer)
     }
+
+    get buffer() { return b }
 
     // we need faddx counters using atomics
     nextTxn(): number {

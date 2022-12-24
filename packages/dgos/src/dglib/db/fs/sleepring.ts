@@ -2,7 +2,7 @@
 
 // a set of SPSC's using atomics that acts as a MPSC with no shared-write cache lines  
 
-import { Mem } from "../thread/mem"
+import { Mem } from "../../thread/mem"
 
 // a limitation of Atomics.wait approach is that while we are sync-sleeping we can't respond to postmessage. a simpler approach that would still allow postmessage is to use async sleep against all the worker tail pointers, not in safari or firefox though
 
@@ -45,7 +45,7 @@ const ptrSlot = 0
 const firstDataSlot = 1 // write memory only
 
 
-export interface PortRing  {
+export interface PortRing {
     // the read array begins with a read pointer and a bell slot for each client.
     read: Uint32Array   // ptr, data
     write: Uint32Array   // ptr, data

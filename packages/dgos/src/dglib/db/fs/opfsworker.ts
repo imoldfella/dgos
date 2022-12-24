@@ -1,10 +1,34 @@
-import { Mem } from '../thread/mem'
+import { Mem } from '../../thread/mem'
 import { newReq, Op, Req } from './data'
+
+// maybe should inline this worker, its short and it probably needs to load to see if it can work?
+// not clear if navigator in the main util will offer the method to check.
 
 const filetable = new Map<number, FileSystemSyncAccessHandle>()
 let shared: ArrayBuffer
 let root: FileSystemDirectoryHandle
 
+onmessage = (e) => {
+    async function init(m: ArrayBuffer) {
+        shared = m
+        root = await navigator.storage.getDirectory();
+        const h = root.getFileHandle('0', { create: true }) as any
+        postMessage(!!h.createSyncAccessHandle)
+    }
+
+    // note that each entry is already tagged with userdata
+    init(e.data).then(() => {
+        onmessage = (e) => {
+            const rq = e.data as Float64Array
+            const cm = new Float64Array(rq.length >> 2)
+            exec(rq, cm)
+            postMessage(cm)
+        }
+    })
+}
+
+// in chrome 108, these are not async; don't use .then, and plan to remove the await
+// https://developer.chrome.com/blog/sync-methods-for-accesshandles/
 export interface FileSystemSyncAccessHandle {
     truncate(len: number): Promise<void>
     flush(): Promise<void>
@@ -22,12 +46,12 @@ function getBuffer(r: Req) {
 }
 
 async function getAccess(n: number) {
-    let a =  filetable.get(n)
+    let a = filetable.get(n)
     if (!a) {
-       // note that create here is "create if necessary"
-       const h = await root.getFileHandle(`${n}`,{create: true})
-       a = (h as any).createSyncAccessHandle() as FileSystemSyncAccessHandle  
-       filetable.set(n,a)
+        // note that create here is "create if necessary"
+        const h = await root.getFileHandle(`${n}`, { create: true })
+        a = (h as any).createSyncAccessHandle() as FileSystemSyncAccessHandle
+        filetable.set(n, a)
     }
     return a
 }
@@ -37,18 +61,18 @@ function complete(r: Req, result: number) {
 }
 
 async function exec(rv: Float64Array, cmv: Float64Array) {
-    for (let i=0; i<rv.length; i+=8) {
-      const r =  new Req(rv.slice(i*8,i*8+8))
+    for (let i = 0; i < rv.length; i += 8) {
+        const r = new Req(rv.slice(i * 8, i * 8 + 8))
         let v = 0
-        try{
-            let a : FileSystemSyncAccessHandle
+        try {
+            let a: FileSystemSyncAccessHandle
             if (r.fh) a = await getAccess(r.fh)
             switch (r.op) {
                 case Op.nuke:
                     // not clear that there is any security here!
                     // probably not. It seems likely that browsers will not erase the presence. It will be better to rebuild a base presense, but even then, its not clear that we can every trust a browser to be private about anything.
                     // note assumption that files are all open!!!! firefox does not support entries or values (yet?) 
-                    for (let o in filetable.keys()){
+                    for (let o in filetable.keys()) {
                         root.removeEntry(`${o}`)
                     }
                     filetable.clear()
@@ -73,30 +97,15 @@ async function exec(rv: Float64Array, cmv: Float64Array) {
                     await a!.write(getBuffer(r), { at: r.at })
                     break
             }
-        } catch(e){
-           v=-1
+        } catch (e) {
+            v = -1
         }
-        cmv[i*2]=r.userdata
-        cmv[i*2+1] = 0
+        cmv[i * 2] = r.userdata
+        cmv[i * 2 + 1] = 0
     }
 }
 
-onmessage = (e) => {
-    async function init(m: ArrayBuffer) {
-        shared = m
-        root = await navigator.storage.getDirectory();
-    }
 
-    // note that each entry is already tagged with userdata
-    init(e.data).then(() => {
-        onmessage = (e) => {
-            const rq = e.data as Float64Array
-            const cm = new Float64Array(rq.length >> 2)
-            exec(rq,cm)
-            postMessage(cm)
-        }
-    })
-}
 
 
 

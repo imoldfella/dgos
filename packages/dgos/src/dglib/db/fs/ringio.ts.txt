@@ -1,6 +1,6 @@
-import { Mem } from "../thread/mem"
-import { RingBuffer, createRingBuffer, ringEntry } from "../thread/ring"
-import { worker } from "../thread/worker_rpc"
+import { Mem } from "../../thread/mem"
+import { RingBuffer, createRingBuffer, ringEntry } from "../../thread/ring"
+import { worker } from "../../thread/worker_rpc"
 
 
 
