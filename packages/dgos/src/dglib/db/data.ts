@@ -6,11 +6,30 @@
 
 // tradeoff of whether to map a log to a partition: more concurrency = potentially bigger lock problem
 
-// these are proxied to the shared server worker.
-export interface ClientApi {
- 
+export interface Dbms {
+    prepare(sql: string): Promise<Statement>
+    begin(): Promise<Tx>
+    query<T>(stmt: Statement, props: T): Promise<Query>
+}
+// we need interfaces that can be shipped to another worker.
+export interface Statement {
 
 }
+export interface Query {
+    // sometimes we want the delta, or always provide the delta?
+    // it probably computed anyway?
+    addListener(fn: () => void): void
+    removeListener(fn: any): void
+    close(): void
+}
+export interface Tx {
+    commit(): Promise<boolean>
+}
+
+export interface Statement {
+
+}
+
 
 
 export type Rid = string
@@ -40,7 +59,7 @@ export interface Identity {
 }
 // transactions need support for Pm, which means we need to fail/rebase
 // pm transactions can be singular? It would be better to not special case.
-export type Tx = {
+export type Txd = {
     [branch: string]: BranchUpdate
 }
 

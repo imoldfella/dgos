@@ -1,51 +1,54 @@
-import { ClientApi } from "../data";
+import { Dbms, Query, Statement, Tx } from "../data";
 
-// we need interfaces that can be shipped to another worker.
-export class Statement {
-
+export class TxSvr implements Tx {
+    async commit(): Promise<boolean> {
+        return true
+    }
 }
-export class Query {
+export class QuerySvr implements Query {
     // sometimes we want the delta, or always provide the delta?
     // it probably computed anyway?
-    addListener(fn: ()=>void){
+    addListener(fn: () => void) {
     }
     removeListener(fn: any) {
     }
-    close(){}
+    close() { }
 }
-export class Tx {
+
+export class StatementSvr implements Statement {
 
 }
-export class Dbms implements ClientApi {
+export class DbmsSvr implements Dbms {
 
     // we need an interface that we can return through the proxy
 
-    async prepare(sql: string) : Promise<Statement>{
+    async prepare(sql: string): Promise<Statement> {
         // we can't
-        return new Statement()
+        return new StatementSvr()
     }
-    async begin() {
+    async begin(): Promise<Tx> {
+        return new TxSvr()
     }
 
-    async query<T>(stmt: Statement, props: T) : Promise<Query>{
-        return new Query()
+    async query<T>(stmt: Statement, props: T): Promise<Query> {
+        return new QuerySvr()
     }
-    api<T>(a: T){
+    api<T>(a: T) {
 
     }
-    table(a: any){
+    table(a: any) {
     }
-    formula(a: any){
+    formula(a: any) {
     }
-    onconnect(p: MessagePort){
+    onconnect(p: MessagePort) {
     }
 }
 
 export interface Options {
-    
+
 }
-export async function createDbms( opt?: Options){
-    return new Dbms()
+export async function createDbms(opt?: Options) {
+    return new DbmsSvr()
 }
 
 // // this allows you use dbms directly without a sharedWorker
