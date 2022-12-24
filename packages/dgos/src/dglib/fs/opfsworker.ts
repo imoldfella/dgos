@@ -1,10 +1,22 @@
 export { }
-import { Mem } from './mem'
-import { RingBuffer, ringEntry, ringRead } from './ring'
+import { Mem } from '../thread/mem'
+import { RingBuffer, ringEntry, ringRead } from '../thread/ring'
+import { Op } from './data'
 
 
 
-//In the origin private file system, a FileSystemHandle represents either the root directory of the origin’s space, or a descendant of the root directory.
+class Req {
+   nv: Float64Array
+   constructor(public data: Uint32Array){
+    this.nv = new Float64Array(data.buffer)
+   }
+   get userdata() { return this.nv[0]}
+   get op () { return this.data[1] }
+   get fh() { return this.data[2] }
+   get arg1() { return this.data[3] }
+   get arg2() { return this.data[4] }
+}
+
 
 export interface FileSystemSyncAccessHandle {
     truncate(len: number): Promise<void>
@@ -14,6 +26,76 @@ export interface FileSystemSyncAccessHandle {
     read(a: ArrayBuffer, opt: { at?: number }): number
     getSize(): Promise<number>
 }
+
+// it might be cheaper to pass the request in shared ram?
+// possibly this passes a number representing an offset in ram
+// or a Uint32(16) so we can represent a uring style request?
+const filetable = new Map<number,OpenFile>()
+let root: FileSystemDirectoryHandle
+class OpenFile {
+    constructor(public fh: FileSystemHandle, public fs: FileSystemSyncAccessHandle){
+    }
+}
+function getHandle(n: number) {
+    return filetable.get(n)!.fh
+}
+function getAccess(n: number) {
+    return filetable.get(n)!.fs
+}
+
+function complete(r: Req, result: number ){
+    postMessage( [r.userdata, result])
+}
+
+async function exec(r: Req) {
+    switch (r.op) {
+        case Op.init: 
+             root = await navigator.storage.getDirectory()
+            break
+        case Op.move:
+            // safari claims this, but not on mdn?
+        // getHandle(r.fh).move(`${r.arg1})
+            break
+        case Op.remove:
+            await root.removeEntry(`${r.fh}`)
+            break
+        case Op.create:
+            await root.getFileHandle(`${r.fh}`, { "create": true})
+            break
+        case Op.open:
+            await root.getFileHandle(`${r.fh}`)
+            break
+        case Op.truncate:
+            await getAccess(r.fh).truncate(r.arg1)
+            break
+        case Op.flush:
+            await getAccess(r.fh).flush()
+            break
+        case Op.close:
+            await getAccess(r.fh).close()
+            break
+        case Op.getSize:
+            const rx = await getAccess(r.fh).getSize()
+            complete(r,rx)
+            return
+        case Op.read:
+            const buffer = new ArrayBuffer(0)
+            await getAccess(r.fh).read(buffer, { at:r.arg2})
+            break
+        case Op.write:
+            const buffer2 = new ArrayBuffer(0)
+            await getAccess(r.fh).write(buffer2, {at: r.arg2})
+            break
+    }
+    complete(r,0)
+}
+onmessage = (e) => {
+    const r = new Req(e.data)
+    exec(r).catch(()=> complete(r, -1))
+}
+
+
+/*
 
 export function getAccess(f: FileSystemFileHandle) {
     return (f as any).createSyncAccessHandle() as FileSystemSyncAccessHandle
@@ -136,15 +218,4 @@ async function lock(lockName: string, options: LockOptions) {
         }
     });
 }
-function init(r: RingBuffer) {
-    const e = ringEntry(r)
-    while (true) {
-        ringRead(r, e)
-    }
-}
-onmessage = (e) => {
-    switch (e.data.method) {
-        case 'init':
-            init(e.data.params)
-    }
-}
+*/

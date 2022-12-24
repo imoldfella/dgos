@@ -1,15 +1,13 @@
 import { Mem } from "./mem"
 
-// for best performance these should be on separate cache lines
-// the tail and data could share a cache line.
-// the bell could
 
 const ptrSlot = 0
 const firstDataSlot = 1 // write memory only
 
+// this ring buffer is strictly SPSC; consumer sleeps when 
 export interface RingBuffer {
-    read: Uint32Array   // next, scratch, bell, data
-    write: Uint32Array   // next, scratch, bell
+    read: Uint32Array   // ptr, data
+    write: Uint32Array   // ptr, data
     capacity: number
     entrySize: number
 }
@@ -67,6 +65,10 @@ export function ringRead(r: RingBuffer, e: Uint32Array) {
     }
 }
 
+
+/*
+not in safari or firefox
+
 export async function ringReadAsync(r: RingBuffer, e: Uint32Array): Promise<void> {
     const read = r.read[ptrSlot]
     const write = r.write[ptrSlot]
@@ -74,8 +76,9 @@ export async function ringReadAsync(r: RingBuffer, e: Uint32Array): Promise<void
         e.set(r.write.slice(firstDataSlot + read, firstDataSlot + read + r.entrySize))
         r.read[ptrSlot]++
     } else {
-        await Atomics.waitAsync(new Int32Array(r.write.buffer), ptrSlot, write)
+        await Atomics.waitAsync(new Int32Array(r.write.buffer), ptrSlot, BigInt(write))
     }
 }
+*/
 
 // can I make thise work for multiple SPSC queues? Not sharing a cacheline should be faster than atomic add.

@@ -1,6 +1,8 @@
-import { Mem } from "./mem"
-import { RingBuffer, createRingBuffer, ringEntry, ringReadAsync } from "./ring"
-import { worker } from "./worker_rpc"
+import { Mem } from "../thread/mem"
+import { RingBuffer, createRingBuffer, ringEntry } from "../thread/ring"
+import { worker } from "../thread/worker_rpc"
+
+
 
 export interface IoRing {
     request: RingBuffer
@@ -18,13 +20,6 @@ export function unpackRequest(u: Uint32Array) {
 export function ringRequest(r: IoRing, request: Request) {
 
 }
-export async function ringCompletion(r: RingBuffer, fn: (c: Float64Array) => void) {
-    const e = ringEntry(r)
-    while (true) {
-        await ringReadAsync(r, e)
-        fn(new Float64Array(e.buffer))
-    }
-}
 
 export function createRingPair(mem: Mem): IoRing {
     return {
@@ -37,33 +32,6 @@ export function createRingPair(mem: Mem): IoRing {
 // the should all map into the same memory though
 // maybe each has their own tls allocator?
 
-
-// only the log can be split, the buffer writer must be shared
-// not clear there is enough value to justify the overhead of splitting the log
-export abstract class Io {
-    abstract init(): Promise<void>
-
-    abstract remove(path: string): Promise<void>
-    abstract create(path: string): Promise<number>
-    abstract open(path: string): Promise<number>
-    abstract truncate(fh: number, len: number): Promise<void>
-    abstract flush(): Promise<void>
-    abstract close(): Promise<void>
-    // abstract write(a: ArrayBuffer, opt?: { at: number }): number
-    // abstract read(a: ArrayBuffer, opt?: { at: number }): number
-    abstract getSize(): Promise<number>
-
-
-    abstract read(fh: number, index: number[], page: Uint32Array[]): Promise<void>
-    abstract write(fh: number, index: number[], page: Uint32Array[]): Promise<void>
-    abstract log(index: number, page: Uint32Array): Promise<void>
-
-    async writeJson(path: string): Promise<void> {
-    }
-    async readJson(): Promise<any> {
-        return
-    }
-}
 
 
 
