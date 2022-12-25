@@ -1,57 +1,176 @@
-import { Dbms, Query, Statement, Tx } from "../data";
+import { Dbms, Lsn, Query, Statement, Tx } from "../data";
+import { Fs, useFs } from "../fs";
+// import { Checkpoint, fileSet, FileSet, LogRecord, Lsn, MemDb, RootRecord, StartState, Txn, TxStatus, TxStatusType, Txx } from "../worker/data"
+import { LogState } from "../worker/log_writer"
+import { LogRecord, Txn, TxStatusType } from "./data";
+import { DbmsSvr } from "./dbms";
 
-export class TxSvr implements Tx {
-    async commit(): Promise<boolean> {
-        return true
-    }
-}
-export class QuerySvr<T> implements Query<T> {
-    forEach(fn: (e: T) => void): void {
-        throw new Error("Method not implemented.");
-    }
-    // sometimes we want the delta, or always provide the delta?
-    // it probably computed anyway?
-    addListener(fn: () => void) {
-    }
-    removeListener(fn: any) {
-    }
-    close() { }
+export type StartState = {
+    mem: ArrayBuffer
+    df: number[]
+    lf: number
+    active: number
 }
 
-export class StatementSvr<P, T> implements Statement<P, T>  {
-    exec(tx: Tx, props: P): Query<T> {
-        throw new Error("Method not implemented.");
-    }
 
-}
-// the sql compiler needs to be an optional module, its like to be large.
+// do I need meta data for the idb files so I can get a directory without 
 
-export class DbmsSvr implements Dbms {
+class ActiveTx extends Map<Txn, { status: TxStatusType, newestLsn: Lsn }>{ }
 
-    async begin(): Promise<Tx> {
-        return new TxSvr()
-    }
+// logs can be a range of file ids?
+// can we cap them? do we want to?
 
-    async query<P, T>(stmt: Statement<P, T>, props: T): Promise<Query<T>> {
-        return new QuerySvr()
-    }
-    api<T>(a: T) {
+export class LogReader {
+    constructor(public fh: number[]) {
 
     }
-    table(a: any) {
+    forEach(from: Lsn, fn: (x: LogRecord) => boolean) {
+
     }
-    formula(a: any) {
-    }
-    onconnect(p: MessagePort) {
+
+    // we are tracing a set of rollback transactions by prevLsn.
+    // each time we want the maximum lsn in set of failed transactions, 
+    // replace that in the set with the 
+    failed(failed: ActiveTx, fn: (x: LogRecord) => boolean) {
+
     }
 }
 
-export interface Options {
+// fix the data files using the log, trim the log and return clean starting point
+// if no files exist, then return an empty database.
+// when we are done there will be no active transactions and no dirty pages.
+// both logs will be truncated
 
-}
+
 export async function createDbms(opt?: Options) {
-    return new DbmsSvr()
+    const pages = opt?.pages ?? 16 * 1024
+
+    const mem = new WebAssembly.Memory({
+        initial: pages, // 64K *64K = 4GB
+        maximum: pages,
+        shared: true
+    })
+
+    const fs = await useFs(mem.buffer)
+    //const df = await fileSet(db.fs, 'data', 64)
+    const fh = await fs.getFiles()
+
+    if (fh.length) {
+        // recover
+        const root: (Lsn)[] = [
+            await readJson<number>(fs, 'root0') ?? 0,
+            await readJson<number>(fs, 'root1') ?? 0]
+        const newestCheckpoint = root[0] > root[1] ? 0 : 1
+
+        // run recovery. we might have to read both logs
+        // start with newest checkpoint, then read to the end of the log
+        // if a new checkpoint has started, but not completed, then the newest checkpoint is in the oldest log file
+        // otherwise it is in the newest log file
+        const lr = new LogReader(lf)
+        // analyze: start from the beginning of the most recent checkpoint that was completed
+        // (a later checkpoint that was started, but not completed, is ignored)
+
+        const activeTx = new ActiveTx()
+        const dirtyPage = new Map<number, number>()
+
+        // we should store not just the tx, but the 
+
+        // this is the earliest recLsn in the DPT 
+        let oldestActive = Infinity
+
+        const analyze = (r: LogRecord) => {
+            if (r.type == Txx.checkpointEnd) {
+                const cp = r.value as Checkpoint
+                for (let i in cp.activeTx) {
+                    activeTx.set(cp.activeTx[i], {
+                        status: TxStatusType.undo,
+                        newestLsn: cp.newestLsn[i]
+                    })
+                }
+                for (let o in cp.dirty) {
+                    dirtyPage.set(cp.dirty[o], cp.recLsn[o])
+                    oldestActive = Math.min(oldestActive, cp.recLsn[0])
+                }
+            } else if (r.type == Txx.txnEnd) {
+                activeTx.delete(r.txn)
+            } else if (r.txn) {
+                let tx = activeTx.get(r.txn)
+                if (!tx) {
+                    activeTx.set(r.txn, {
+                        status: TxStatusType.undo,
+                        newestLsn: r.lsn
+                    })
+                } else {
+                    tx.newestLsn = r.lsn
+                }
+                if (r.type == Txx.commit)
+                    tx!.status = TxStatusType.commit
+                else if (r.type == Txx.update && !dirtyPage.has(r.page)) {
+                    dirtyPage.set(r.page, r.lsn)
+                }
+            }
+            return true
+        }
+
+        lr.forEach(newestCheckpoint, analyze)
+        for (let [k, v] of activeTx) {
+            if (v.status == TxStatusType.commit) {
+                // write a txn_end record 
+                activeTx.delete(k)
+            } else {
+                v.status = TxStatusType.abort
+                // write an abort record
+            }
+        }
+
+        // REDO
+        lr.forEach(oldestActive, (r) => {
+            const recLsn = dirtyPage.get(r.page)
+            if (recLsn)
+                switch (r.type) {
+                    case Txx.update:
+                    case Txx.clr:
+                        {
+                            if (r.lsn >= recLsn) {
+                                // read the page
+                                // if the pageLsn > r.lsn, ignore update
+                                // else apply change, set pagelsn  = r.lsn
+                            }
+                        }
+                        break
+                }
+
+
+            return true
+        })
+
+        // UNDO
+        // write a clr for every changee - why? we might crash during recovery.
+        lr.failed(activeTx, (r) => {
+            switch (r.type) {
+
+                case Txx.update:
+                // update active pages.
+            }
+            return true
+        })
+    }
+
+    const r = new DbmsSvr(fs)
+    recover(r)
+    return r
+    return {
+        mem,
+        df,
+        lf,
+        active: 0
+    }
 }
+export interface Options {
+    pages: number // 1gb
+}
+
+
 
 // // this allows you use dbms directly without a sharedWorker
 // export async function testDb<T>(opt?: Options) {

@@ -51,6 +51,7 @@ export abstract class Fs {
                 this.oncomplete(x[i*2], x[i*2+1])
         }
     }
+    abstract getFiles() : Promise<number[]>
     abstract submit(x: Float64Array):void
     // future work? send the requests in shared memory is probably faster and easier for wasm
     // abstract submitv(start: number, end: number):void

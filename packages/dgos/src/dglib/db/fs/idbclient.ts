@@ -28,6 +28,9 @@ export class IdbFs extends Fs {
   getBuffer(r: Req) {
     return this.mem.slice(r.begin, r.end)
   }
+  async getFiles() : Promise<number[]>{
+    return []
+  }
 
   async submit(rv: Float64Array) {
     const cmv = new Float64Array(rv.length >> 2)
