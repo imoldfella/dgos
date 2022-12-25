@@ -59,3 +59,10 @@ export interface Log {
     getPos(): Promise<void>
 }
 
+
+export type Checkpoint = {
+    activeTx: Txn[]
+    newestLsn: Lsn[]
+    dirty: PageId[]
+    recLsn: Lsn[] // for each tx, we want the earliest record we need to scan.
+}

@@ -1,5 +1,27 @@
 import { Statement } from '../data'
-import { DbmsSvr, StatementSvr } from './server'
+import { DbmsSvr, StatementSvr } from './dbms'
+import { parse, parseFirst, Statement as Pstatement } from 'pgsql-ast-parser';
+import { astVisitor } from 'pgsql-ast-parser';
+
+const tables = new Set();
+let joins = 0;
+const visitor = astVisitor(map => ({
+
+    // implement here AST parts you want to hook
+
+    tableRef: t => tables.add(t.name),
+    join: t => {
+        joins++;
+        // call the default implementation of 'join'
+        // this will ensure that the subtree is also traversed.
+        map.super().join(t);
+    }
+}))
+
+// start traversing a statement
+visitor.statement(parseFirst(`select * from ta left join tb on ta.id=tb.id`));
+
+
 
 // this should be bundled separately? or just depend on tree shaking?
 export class Compiler {
@@ -16,7 +38,10 @@ export class Compiler {
     // we need an interface that we can return through the proxy
 
     async prepare<P, T>(sql: string): Promise<Statement<P, T>> {
-        // we can't
+
+        const ast: Pstatement[] = parse(`BEGIN TRANSACTION;
+                                insert into my_table values (1, 'two')`)
+
         return new StatementSvr<P, T>()
     }
 

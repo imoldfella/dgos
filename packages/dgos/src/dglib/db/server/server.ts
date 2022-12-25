@@ -1,8 +1,8 @@
 import { Dbms, Lsn, Query, Statement, Tx } from "../data";
-import { Fs, useFs } from "../fs";
+import { Fs, readJson, useFs } from "../fs";
 // import { Checkpoint, fileSet, FileSet, LogRecord, Lsn, MemDb, RootRecord, StartState, Txn, TxStatus, TxStatusType, Txx } from "../worker/data"
 import { LogState } from "../worker/log_writer"
-import { LogRecord, Txn, TxStatusType } from "./data";
+import { Checkpoint, LogRecord, Txn, TxStatusType, Txx } from "./data";
 import { DbmsSvr } from "./dbms";
 
 export type StartState = {
@@ -12,18 +12,20 @@ export type StartState = {
     active: number
 }
 
+const checkpointFile = 0
+const logFile = 1
+const dataFile = 2
 
 // do I need meta data for the idb files so I can get a directory without 
 
-class ActiveTx extends Map<Txn, { status: TxStatusType, newestLsn: Lsn }>{ }
+type ActiveTx = Map<Txn, { status: TxStatusType, newestLsn: Lsn }>
 
 // logs can be a range of file ids?
 // can we cap them? do we want to?
 
 export class LogReader {
-    constructor(public fh: number[]) {
+    constructor(fs: Fs, public fh: number) { }
 
-    }
     forEach(from: Lsn, fn: (x: LogRecord) => boolean) {
 
     }
@@ -41,6 +43,102 @@ export class LogReader {
 // when we are done there will be no active transactions and no dirty pages.
 // both logs will be truncated
 
+export interface Options {
+    pages: number // 1gb
+}
+
+// pull this out so we can test from a crash state. (fake-idb always starts empty)
+
+async function recover(fs: Fs) {
+    const checkpoint = (await fs.atomicRead(0))?.checkpoint ?? 0
+    // start with newest (completed) checkpoint, then read to the end of the log
+    // otherwise it is in the newest log file
+    const lr = new LogReader(fs, logFile)
+    // analyze: start from the beginning of the most recent checkpoint that was completed
+    // (a later checkpoint that was started, but not completed, is ignored)
+
+    const activeTx = new Map()
+    const dirtyPage = new Map<number, number>()
+    // this is the earliest recLsn in the DPT 
+    let oldestActive = Infinity
+
+    const analyze = (r: LogRecord) => {
+        if (r.type == Txx.checkpointEnd) {
+            const cp = r.value as Checkpoint
+            for (let i in cp.activeTx) {
+                activeTx.set(cp.activeTx[i], {
+                    status: TxStatusType.undo,
+                    newestLsn: cp.newestLsn[i]
+                })
+            }
+            for (let o in cp.dirty) {
+                dirtyPage.set(cp.dirty[o], cp.recLsn[o])
+                oldestActive = Math.min(oldestActive, cp.recLsn[0])
+            }
+        } else if (r.type == Txx.txnEnd) {
+            activeTx.delete(r.txn)
+        } else if (r.txn) {
+            let tx = activeTx.get(r.txn)
+            if (!tx) {
+                activeTx.set(r.txn, {
+                    status: TxStatusType.undo,
+                    newestLsn: r.lsn
+                })
+            } else {
+                tx.newestLsn = r.lsn
+            }
+            if (r.type == Txx.commit)
+                tx!.status = TxStatusType.commit
+            else if (r.type == Txx.update && !dirtyPage.has(r.page)) {
+                dirtyPage.set(r.page, r.lsn)
+            }
+        }
+        return true
+    }
+
+    lr.forEach(checkpoint, analyze)
+    for (let [k, v] of activeTx) {
+        if (v.status == TxStatusType.commit) {
+            // write a txn_end record 
+            activeTx.delete(k)
+        } else {
+            v.status = TxStatusType.abort
+            // write an abort record
+        }
+    }
+
+    // REDO
+    lr.forEach(oldestActive, (r) => {
+        const recLsn = dirtyPage.get(r.page)
+        if (recLsn)
+            switch (r.type) {
+                case Txx.update:
+                case Txx.clr:
+                    {
+                        if (r.lsn >= recLsn) {
+                            // read the page
+                            // if the pageLsn > r.lsn, ignore update
+                            // else apply change, set pagelsn  = r.lsn
+                        }
+                    }
+                    break
+            }
+
+
+        return true
+    })
+
+    // UNDO
+    // write a clr for every changee - why? we might crash during recovery.
+    lr.failed(activeTx, (r) => {
+        switch (r.type) {
+
+            case Txx.update:
+            // update active pages.
+        }
+        return true
+    })
+}
 
 export async function createDbms(opt?: Options) {
     const pages = opt?.pages ?? 16 * 1024
@@ -52,122 +150,15 @@ export async function createDbms(opt?: Options) {
     })
 
     const fs = await useFs(mem.buffer)
-    //const df = await fileSet(db.fs, 'data', 64)
     const fh = await fs.getFiles()
+    if (fh.length) recover(fs)
+    else {
+        // create an initial checkpoint, empty log, empty data
 
-    if (fh.length) {
-        // recover
-        const root: (Lsn)[] = [
-            await readJson<number>(fs, 'root0') ?? 0,
-            await readJson<number>(fs, 'root1') ?? 0]
-        const newestCheckpoint = root[0] > root[1] ? 0 : 1
-
-        // run recovery. we might have to read both logs
-        // start with newest checkpoint, then read to the end of the log
-        // if a new checkpoint has started, but not completed, then the newest checkpoint is in the oldest log file
-        // otherwise it is in the newest log file
-        const lr = new LogReader(lf)
-        // analyze: start from the beginning of the most recent checkpoint that was completed
-        // (a later checkpoint that was started, but not completed, is ignored)
-
-        const activeTx = new ActiveTx()
-        const dirtyPage = new Map<number, number>()
-
-        // we should store not just the tx, but the 
-
-        // this is the earliest recLsn in the DPT 
-        let oldestActive = Infinity
-
-        const analyze = (r: LogRecord) => {
-            if (r.type == Txx.checkpointEnd) {
-                const cp = r.value as Checkpoint
-                for (let i in cp.activeTx) {
-                    activeTx.set(cp.activeTx[i], {
-                        status: TxStatusType.undo,
-                        newestLsn: cp.newestLsn[i]
-                    })
-                }
-                for (let o in cp.dirty) {
-                    dirtyPage.set(cp.dirty[o], cp.recLsn[o])
-                    oldestActive = Math.min(oldestActive, cp.recLsn[0])
-                }
-            } else if (r.type == Txx.txnEnd) {
-                activeTx.delete(r.txn)
-            } else if (r.txn) {
-                let tx = activeTx.get(r.txn)
-                if (!tx) {
-                    activeTx.set(r.txn, {
-                        status: TxStatusType.undo,
-                        newestLsn: r.lsn
-                    })
-                } else {
-                    tx.newestLsn = r.lsn
-                }
-                if (r.type == Txx.commit)
-                    tx!.status = TxStatusType.commit
-                else if (r.type == Txx.update && !dirtyPage.has(r.page)) {
-                    dirtyPage.set(r.page, r.lsn)
-                }
-            }
-            return true
-        }
-
-        lr.forEach(newestCheckpoint, analyze)
-        for (let [k, v] of activeTx) {
-            if (v.status == TxStatusType.commit) {
-                // write a txn_end record 
-                activeTx.delete(k)
-            } else {
-                v.status = TxStatusType.abort
-                // write an abort record
-            }
-        }
-
-        // REDO
-        lr.forEach(oldestActive, (r) => {
-            const recLsn = dirtyPage.get(r.page)
-            if (recLsn)
-                switch (r.type) {
-                    case Txx.update:
-                    case Txx.clr:
-                        {
-                            if (r.lsn >= recLsn) {
-                                // read the page
-                                // if the pageLsn > r.lsn, ignore update
-                                // else apply change, set pagelsn  = r.lsn
-                            }
-                        }
-                        break
-                }
-
-
-            return true
-        })
-
-        // UNDO
-        // write a clr for every changee - why? we might crash during recovery.
-        lr.failed(activeTx, (r) => {
-            switch (r.type) {
-
-                case Txx.update:
-                // update active pages.
-            }
-            return true
-        })
     }
 
     const r = new DbmsSvr(fs)
-    recover(r)
     return r
-    return {
-        mem,
-        df,
-        lf,
-        active: 0
-    }
-}
-export interface Options {
-    pages: number // 1gb
 }
 
 

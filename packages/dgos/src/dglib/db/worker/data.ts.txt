@@ -43,22 +43,4 @@ export interface PageInfo {
     recLsn: number // oldest update to page since last flush
 }
 
-// there is a data file for each page size. If we could we would trim pages out each logical page, but opfs can't. idb can
-export type FileSet = FileSystemSyncAccessHandle[]
-export async function fileSet(d: FileSystemDirectoryHandle, root: string, n: number): Promise<FileSet> {
-    const r: FileSet = []
-    for (let i = 0; i < n; i++) {
-        const f = await d.getFileHandle(root + i)
-        r.push(getAccess(f))
-    }
-    return r
-}
 
-
-
-export type Checkpoint = {
-    activeTx: Txn[]
-    newestLsn: Lsn[]
-    dirty: PageId[]
-    recLsn: Lsn[] // for each tx, we want the earliest record we need to scan.
-}

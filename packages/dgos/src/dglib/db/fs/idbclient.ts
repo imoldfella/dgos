@@ -22,13 +22,25 @@ export const idbExists = async (dbName: string, version = 1) => {
 }
 
 export class IdbFs extends Fs {
+  atomicWrite(h: number, d: any): void {
+    throw new Error("Method not implemented.");
+  }
+  atomicRead(h: number): Promise<any> {
+    throw new Error("Method not implemented.");
+  }
+  getSize(h: number): Promise<number> {
+    throw new Error("Method not implemented.");
+  }
+  async trim(h: number, at: number): Promise<void> {
+    this.db.delete('dg', IDBKeyRange.bound([h, 0], [h, 0]))
+  }
   constructor(public db: idb.IDBPDatabase, public mem: Uint32Array) {
     super()
   }
   getBuffer(r: Req) {
     return this.mem.slice(r.begin, r.end)
   }
-  async getFiles() : Promise<number[]>{
+  async getFiles(): Promise<number[]> {
     return []
   }
 
@@ -48,7 +60,7 @@ export class IdbFs extends Fs {
             idb.deleteDB('dg')
             break
           case Op.truncate:
-            await this.db.delete('dg', IDBKeyRange.bound([r.fh, 0], [r.fh, r.at]))
+            await this.db.delete('dg', IDBKeyRange.bound([r.fh, r.at], [r.fh, Infinity]))
             break
           case Op.flush:
           case Op.close:

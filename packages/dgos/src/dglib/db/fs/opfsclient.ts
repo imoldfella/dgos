@@ -1,9 +1,24 @@
-import { MemDb } from "../worker/data"
+
 import { RpcClient, worker } from "../../thread/worker_rpc"
 import { Fs, Op } from "./data"
 
 
 export class Opfs extends Fs {
+    atomicWrite(h: number, d: any): void {
+        throw new Error("Method not implemented.")
+    }
+    atomicRead(h: number): Promise<any> {
+        throw new Error("Method not implemented.")
+    }
+    getSize(h: number): Promise<number> {
+        throw new Error("Method not implemented.")
+    }
+    getFiles(): Promise<number[]> {
+        throw new Error("Method not implemented.")
+    }
+    trim(h: number, at: number): Promise<void> {
+        throw new Error("Method not implemented.")
+    }
     submit(x: Float64Array) {
         this.w.postMessage(x)
     }

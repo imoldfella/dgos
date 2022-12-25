@@ -24,7 +24,7 @@
 */
 
 export enum Op {
-    nuke,  truncate, flush, close, getSize, read, write
+    nuke, truncate, flush, close, getSize, read, write
 }
 interface OpfsRq {
     userdata: number
@@ -34,7 +34,7 @@ interface OpfsRq {
     begin: number
     end: number
 }
-type Completer = (baton: number, result: number)=> Promise<void>
+type Completer = (baton: number, result: number) => Promise<void>
 /*
     tag = 42
     m = new Map<number, [resolve: (a: any) => void, reject: (e: any) => void]>()
@@ -44,15 +44,21 @@ type Completer = (baton: number, result: number)=> Promise<void>
             o[0](result)
 */
 export abstract class Fs {
-    oncomplete?:  Completer
+    oncomplete?: Completer
     notify(x: Float64Array) {
-        if (this.oncomplete){
-            for (let i=0; i<x.length; i+=2)
-                this.oncomplete(x[i*2], x[i*2+1])
+        if (this.oncomplete) {
+            for (let i = 0; i < x.length; i += 2)
+                this.oncomplete(x[i * 2], x[i * 2 + 1])
         }
     }
-    abstract getFiles() : Promise<number[]>
-    abstract submit(x: Float64Array):void
+    abstract getFiles(): Promise<number[]>
+    abstract submit(x: Float64Array): void
+    abstract trim(h: number, at: number): Promise<void>
+
+    abstract atomicWrite(h: number, d: any): void
+    abstract atomicRead(h: number): Promise<any>
+    abstract getSize(h: number): Promise<number>
+
     // future work? send the requests in shared memory is probably faster and easier for wasm
     // abstract submitv(start: number, end: number):void
 }
@@ -81,11 +87,15 @@ export class Req {
     get end() { return this.nv[5] }
 
 }
-export function newReq(f: Float64Array) : Req[] {
-    const r = new Array<Req>(f.length>>3)
+export function newReq(f: Float64Array): Req[] {
+    const r = new Array<Req>(f.length >> 3)
 
-    r.forEach((e,i)=> {
-        r[i] =  new Req(f.slice(i*8,i*8+8))
+    r.forEach((e, i) => {
+        r[i] = new Req(f.slice(i * 8, i * 8 + 8))
     })
     return r
+}
+
+export async function readJson<T>(fs: Fs, h: number): Promise<T> {
+    throw ""
 }
