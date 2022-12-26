@@ -5,7 +5,6 @@
 // Uint8Array's can't be keys, so would need to hex them.
 
 // tradeoff of whether to map a log to a partition: more concurrency = potentially bigger lock problem
-
 export interface Dbms {
     begin(): Promise<Tx>
     query<P, T>(stmt: Statement<P, T>, props: T): Promise<Query<T>>
@@ -70,22 +69,7 @@ export interface Scan {
 }
 export type ScanTx = Scan[]
 
-// animation-play-state: running | paused
-export interface ColumnSchema {
-    name: string
-    type: string
-    default: string
-}
-export interface TableSchema {
-    column: ColumnSchema[]
-}
-export interface Schema {
-    name: string,
-    version: string
-    table: {
-        [key: string]: TableSchema
-    }
-}
+
 // branches have dns address org-branch.froov.net for example
 export interface Branch {
     name: string

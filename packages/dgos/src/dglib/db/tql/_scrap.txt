@@ -1,0 +1,43 @@
+
+function f(key: string): any {
+    console.log("evaluate: ", key);
+    return function () {
+        console.log("call: ", key);
+    };
+}
+function table(): any { }
+
+@f("")
+export class Db {
+    artists() {
+        // these should return columns? literal vs column name.
+        return table({
+            name: "",
+            age: 0
+        })
+    }
+
+
+    countArtists() {
+        
+        return query({
+            a: this.artists().name,
+            c: count()
+        })
+    }
+
+
+    // Can I execute this into existence? convert to valid sql as long as no typescript?
+    // what about using global functions? then maybe 
+    topArtists(l: number) {
+        let a = this.artists()
+        limit(l)
+        where(a.name > "a"
+            && $in(a.name, a))
+        sort(a.name)
+        group(a.name)
+        return query({
+            c: all()
+        })
+    }
+}
