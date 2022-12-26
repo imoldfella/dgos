@@ -142,7 +142,7 @@ export interface Snapshot {
     }
 }
 export interface TableSnapshot {
-    schema: TableSchema
+    schema: any
     item: Btree
 }
 
