@@ -16,6 +16,9 @@
     "vite-plugin-solid": "^2.3.0"
   },
   "dependencies": {
+    "@typescript/vfs": "^1.4.0",
+    "pg-query-emscripten": "^0.1.0",
+    "pgsql-parser": "^13.4.1",
     "solid-js": "^1.5.1"
   }
 }

@@ -1,5 +1,57 @@
 
-import { where, limit, sort as order, primary, insert, update, remove, merge, drop, Schema, outer, SchemaObject, lateral } from '../data_schema'
+import { where, limit, sort as order, primary, insert, update, remove, merge, drop, Schema, outer, SchemaObject, lateral } from '../../dgos/src/dglib/db'
+
+
+// global structs used in relevant functions (e.g) primary are tables
+// functions are views/queries and transactions. transactions can be identified because they call insert,remove, etc
+type RichText = {}
+function schema(a: any, b: any) { }
+const Markdown = ""
+
+// tql can manage rich text and other arrays
+// rich text can be typed with prosemirror schemas, including an extended Markdown one
+const bio = {
+    name: "",
+    bio: [] as RichText[]
+}
+schema(bio.name, Markdown)
+type Bio = typeof bio
+primary(bio.name)
+
+// we can incrementally modify arrays and use tsx. Updates automatically rebase, or disable with commit({rebase: false})
+export function updateBio() {
+    update((x: Bio) => {
+        if (bio.name == "joe") {
+            x.bio.splice(100, 1, <em>STAR!!</em>)
+        }
+    })
+}
+
+// tql supports row level security, and a easy to use template called concierge 
+// each table by default has a groupid attribute for row level security.
+// createGroup assigns the next available id.
+// id 0 can access all the rows, each
+export function createGroup(name: string) {
+}
+// grant to a user
+// inserts the user into role table, encrypts an access key for their use.
+type Privilege = "admin" | "write" | "read"
+type PublicKey = string
+export function grant(group: string, priv: Privilege, to: PublicKey) {
+
+}
+export function revoke(group: string, priv: Privilege, to: PublicKey) {
+
+}
+
+// tql supports branching, tagging, and adoption
+// a branch is a logical copy of the database, unlike a group it can have its own modified schema and security
+export function createBranch(name: string) { }
+export function createTag(name: string) { }
+// merge local changes on top of changes from the source
+export function rebase(from: string) { }
+// like a cherry pick; makes this branch identical to the source
+export function adopt(from: string) { }
 
 const artists = {
     name: "",
@@ -70,7 +122,7 @@ export function viewOver42b(n: number, y: string) {
 }
 
 // returns object so that can be updated on successful commit
-export const updateActor: SchemaObject = (props: { name: string, age: number }) => {
+export const updateActor = (props: { name: string, age: number }) => {
     insert((x: Artists) => {
         x = props
     })

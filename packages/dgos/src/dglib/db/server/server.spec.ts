@@ -7,6 +7,10 @@ import { Compiler } from './compiler'
 // if the data is not found locally, then we retrieve it from the origin.
 // modifying the schema requires a compiler.
 
+test('one', () => {
+    expect(1 + 1).toEqual(2)
+})
+
 test('db', async () => {
     const dbms = await createDbms()
 
