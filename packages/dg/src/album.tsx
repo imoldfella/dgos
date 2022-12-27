@@ -1,22 +1,46 @@
 
+import { runInThisContext } from 'vm'
 import { where, limit, sort as order, primary, insert, update, remove, merge, drop, Schema, outer, SchemaObject, lateral } from '../../dgos/src/dglib/db'
 
 
 // global structs used in relevant functions (e.g) primary are tables
 // functions are views/queries and transactions. transactions can be identified because they call insert,remove, etc
 type RichText = {}
+const emptyRichText = [] as RichText[]
+type CellValue = {}
+const emptyCell = [] as CellValue[]
 function schema(a: any, b: any) { }
 const Markdown = ""
 
+const duid = BigInt(0)
+
+
+// we support an extensible concept of documents in the database
+// these documents can be referenced by in cells, including an overall file system per group that holds all the files that group can read. Each user can view this as a single file system where the top level folders are the groups the user belongs to.
+
+// uses the rowid for a primary key.
+export const doc = {
+    createdTx: 0,  // the transaction the document was created. It becomes an alternate key preferred to docuuid when its available
+    name: "untitled",
+}
+
+export const ssdoc = {
+    ...doc
+}
+
+export const sscell = {
+    row: 0, col: 0, sheet: 0, cellType: 0, cellValue: emptyCell
+}
 // tql can manage rich text and other arrays
 // rich text can be typed with prosemirror schemas, including an extended Markdown one
 const bio = {
     name: "",
-    bio: [] as RichText[]
+    bio: emptyRichText
 }
 schema(bio.name, Markdown)
 type Bio = typeof bio
 primary(bio.name)
+// nohistory(bio.bio) default is to maintain history on 
 
 // we can incrementally modify arrays and use tsx. Updates automatically rebase, or disable with commit({rebase: false})
 export function updateBio() {
@@ -25,6 +49,13 @@ export function updateBio() {
             x.bio.splice(100, 1, <em>STAR!!</em>)
         }
     })
+}
+
+// a spreadsheet is 
+// create table sscell (doc,col,row,value)
+// create table ssdoc (doc,row[],col[],sheet[],meta1,...)
+export function updateSpreadsheet() {
+
 }
 
 // tql supports row level security, and a easy to use template called concierge 
