@@ -4,103 +4,104 @@ import tsvfs from '@typescript/vfs'
 import fs from 'fs'
 import { TextDecoder } from 'util';
 
-
-
-
 function ex() {
-    const fsMap = tsvfs.createDefaultMapFromNodeModules({ target: ts.ScriptTarget.ES2015 })
-    fsMap.set('index.ts', 'console.log("Hello World")')
+  const fsMap = tsvfs.createDefaultMapFromNodeModules({ target: ts.ScriptTarget.ES2015 })
+  fsMap.set('index.ts', 'console.log("Hello World")')
 }
-
 
 function main() {
 
-    const filename = "test.ts";
-    const codeb = fs.readFileSync('./album.ts')
-    const code = new TextDecoder().decode(codeb)
-    //`const test: number = 1 + 2;`;
+  const filename = "test.ts";
+  const codeb = fs.readFileSync('./simple.tsx')
+  const code = new TextDecoder().decode(codeb)
+  //`const test: number = 1 + 2;`;
 
-    const sourceFile = ts.createSourceFile(
-        filename, code, ts.ScriptTarget.Latest
+  const sourceFile = ts.createSourceFile(
+    filename, code, ts.ScriptTarget.Latest
+  );
+
+  function printRecursiveFrom(
+    node: ts.Node, indentLevel: number, sourceFile: ts.SourceFile
+  ) {
+    const indentation = "-".repeat(indentLevel);
+    const syntaxKind = ts.SyntaxKind[node.kind];
+    const nodeText = node.getText(sourceFile);
+    console.log(`${indentation}${syntaxKind}: ${nodeText}`);
+
+    node.forEachChild(child =>
+      printRecursiveFrom(child, indentLevel + 1, sourceFile)
     );
+  }
 
-    function printRecursiveFrom(
-        node: ts.Node, indentLevel: number, sourceFile: ts.SourceFile
-    ) {
-        const indentation = "-".repeat(indentLevel);
-        const syntaxKind = ts.SyntaxKind[node.kind];
-        const nodeText = node.getText(sourceFile);
-        console.log(`${indentation}${syntaxKind}: ${nodeText}`);
-
-        node.forEachChild(child =>
-            printRecursiveFrom(child, indentLevel + 1, sourceFile)
-        );
-    }
-
-    printRecursiveFrom(sourceFile, 0, sourceFile);
+  printRecursiveFrom(sourceFile, 0, sourceFile);
 }
 
 
-const insert = `insert into my_table values (1, 'two')`
-const join = `SELECT item.item_no,item_descrip,
-invoice.invoice_no,invoice.sold_qty
-FROM invoice
-FULL OUTER JOIN item
-ON invoice.item_no=item.item_no
-ORDER BY item_no;
-    `
-const merge2 = `MERGE INTO wines w
-USING (VALUES('Chateau Lafite 2003', '24')) v
-ON v.column1 = w.winename
-WHEN NOT MATCHED 
-  INSERT VALUES(v.column1, v.column2)
-WHEN MATCHED
-  UPDATE SET stock = stock + v.column2;`
-
-const merge = `MERGE CustomerAccount CA
-
-USING (SELECT CustomerId, TransactionValue, 
-       FROM Transactions
-       WHERE TransactionId > 35345678) AS T
-
-ON T.CustomerId = CA.CustomerId
-
-WHEN MATCHED 
-  UPDATE SET Balance = Balance - TransactionValue
-
-WHEN NOT MATCHED
-  INSERT (CustomerId, Balance)
-  VALUES (T.CustomerId, T.TransactionValue)`
-
-// this parser is interesting becuase its all typescript, but it won't keep pace with postgresql
-//import { parse, parseFirst, Statement, toSql } from 'pgsql-ast-parser';
-// function sql() {
-//     // parse multiple statements
-//     const ast: Statement = parseFirst(merge);
-//     console.log(JSON.stringify(ast, null, 2))
-//     const sql: string = toSql.statement(ast);
-//     console.log(sql)
-// }
-
-// this is webassembly 
-// newest fork is https://github.com/cybertec-postgresql/pg-query-emscripten
-// we should compile for 15
-// no merge
-import PgQuery from 'pg-query-emscripten';
-function sql2() {
-    const ast = PgQuery.parse(join)
-    console.log(JSON.stringify(ast, null, 2))
-    const sql = PgQuery.deparse(ast)
-    console.log(sql)
-}
-sql2()
-
-// this is based on postgres, compiled for node only. It's old postgresql
-// import { parse as parse2 } from 'pgsql-parser'
-// function sql3() {
-//     const stmts = parse2(merge);
-//     console.log(JSON.stringify(stmts, null, 2))
-// }
-// sql3()
 
 //main()
+
+function xx() {
+  const filename = "/Users/jimhurd/dev/datagrove/dgos/packages/dg/src/album.tsx"
+  const program = ts.createProgram([filename], {
+    "jsx": ts.JsxEmit.ReactJSX,
+    "jsxImportSource": "solid-js"
+  });
+  console.log(program.getRootFileNames())
+  const sourceFile = program.getSourceFile(filename);
+  program.emit()
+  const diagnostics = ts.getPreEmitDiagnostics(program);
+
+  for (const diagnostic of diagnostics) {
+    const message = diagnostic.messageText;
+    const file = diagnostic.file;
+    const filename = file?.fileName;
+
+    const lineAndChar = file?.getLineAndCharacterOfPosition(
+      diagnostic.start ?? 0
+    )
+    if (!lineAndChar) continue
+    const line = lineAndChar.line + 1;
+    const character = lineAndChar.character + 1;
+
+    console.log(message);
+    console.log(`(${filename}:${line}:${character})`);
+  }
+
+  const typeChecker = program.getTypeChecker();
+
+  function recursivelyPrintVariableDeclarations(
+    node: ts.Node, sourceFile: ts.SourceFile
+  ) {
+    if (ts.isVariableDeclaration(node)) {
+      const nodeText = node.getText(sourceFile);
+      const type = typeChecker.getTypeAtLocation(node);
+      const typeName = typeChecker.typeToString(type, node);
+
+      console.log(nodeText);
+      console.log(`(${typeName})`);
+    }
+
+    node.forEachChild(child =>
+      recursivelyPrintVariableDeclarations(child, sourceFile)
+    );
+  }
+
+  recursivelyPrintVariableDeclarations(sourceFile!, sourceFile!);
+
+
+  function printRecursiveFrom(
+    node: ts.Node, indentLevel: number, sourceFile: ts.SourceFile
+  ) {
+    const indentation = "-".repeat(indentLevel);
+    const syntaxKind = ts.SyntaxKind[node.kind];
+    const nodeText = node.getText(sourceFile);
+    console.log(`${indentation}${syntaxKind}: ${nodeText}`);
+
+    node.forEachChild(child =>
+      printRecursiveFrom(child, indentLevel + 1, sourceFile)
+    );
+  }
+
+  printRecursiveFrom(sourceFile!, 0, sourceFile!);
+}
+xx()

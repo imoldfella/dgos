@@ -1,0 +1,1419 @@
+[ '/Users/jimhurd/dev/datagrove/dgos/packages/dg/src/album.tsx' ]
+artists = {
+    name: "",
+    age: 0,
+    bio: emptyText,
+    budget: emptySheet,
+    hype: emptyPresent,
+}
+({ name: string; age: number; bio: bigint; budget: bigint; hype: bigint; })
+album = {
+    name: "",
+    artist: "",
+}
+({ name: string; artist: string; })
+sold = {
+    name: "",
+    count: 0,
+}
+({ name: string; count: number; })
+el = <em>STAR!!</em>
+(JSX.Element)
+a = artists
+({ name: string; age: number; bio: bigint; budget: bigint; hype: bigint; })
+s = lateral(() => {
+        sold.name == album.name
+        limit(3)
+        order(sold.count)
+        return sold
+    })
+(void)
+a = viewOver(42)
+({ name: string; age: number; })
+updateActor = (props: Partial<Artists>) => {
+    insert((x: Artists) => {
+        x = {
+            ...x,
+            ...props
+        }
+    })
+    update((x: Artists) => {
+        if (x.age > 42) {
+            x.name = "tim"
+        }
+    })
+    remove((x: Artists) => x.age < 32)
+
+    const updated = merge((x: Artists, y: Artists, matched: boolean) => {
+        if (x.name == y.name) { // on condition
+            // if matched is false, x will be defaults
+            if (matched) {
+                x.name = y.name  // y and x
+            } else {
+                x.name = y.name // y but no x
+            }
+        } else {
+            // here we have x, but not y
+            drop()
+        }
+    }
+    )
+
+    return {
+        updated
+    }
+}
+((props: Partial<Artists>) => { updated: void; })
+updated = merge((x: Artists, y: Artists, matched: boolean) => {
+        if (x.name == y.name) { // on condition
+            // if matched is false, x will be defaults
+            if (matched) {
+                x.name = y.name  // y and x
+            } else {
+                x.name = y.name // y but no x
+            }
+        } else {
+            // here we have x, but not y
+            drop()
+        }
+    }
+    )
+(void)
+albumSchema: Schema = {
+    artists,
+    viewOver,
+    viewOver42b,
+    updateActor,
+    outerJoin,
+}
+(Schema)
+SourceFile: import { TextPart, emptyText, emptySheet, emptyPresent, where, index, limit, sort as order, primary, insert, update, remove, merge, drop, Schema, outer, SchemaObject, lateral, dictionary } from '../../dgos/src/dglib/db'
+import { } from 'solid-js/web'
+// JSX is a mess https://github.com/microsoft/TypeScript/issues/41813
+
+/* tslint:disable:7026 */
+const artists = {
+    name: "",
+    age: 0,
+    bio: emptyText,
+    budget: emptySheet,
+    hype: emptyPresent,
+}
+type Artists = typeof artists
+primary(artists.name)
+
+const album = {
+    name: "",
+    artist: "",
+}
+export type Album = typeof artists
+primary(album.name)
+
+const sold = {
+    name: "",
+    count: 0,
+}
+export type Sold = typeof sold
+primary(album.name)
+
+
+// we can incrementally modify arrays and use tsx. Updates automatically rebase, or disable with commit({rebase: false})
+export function updateBio() {
+    const el = <em>STAR!!</em>
+
+    update((x: TextPart) => {
+        if (x.rowid == BigInt(0)) {
+            x.data.splice(100, 1, el)
+        }
+    })
+}
+
+// a spreadsheet is 
+// create table sscell (doc,col,row,value)
+// create table ssdoc (doc,row[],col[],sheet[],meta1,...)
+export function updateBudget() {
+    // inserting a sheet, row, or column will allocate a new id locally that will be converted to a global id on the server
+    // normal insertion for the value, and ordered insertion for the position.
+
+
+}
+
+// tql supports row level security, and a easy to use template called concierge 
+// each table by default has a groupid attribute for row level security.
+// createGroup assigns the next available id.
+// id 0 can access all the rows, each
+export function createGroup(name: string) {
+}
+// grant to a user
+// inserts the user into role table, encrypts an access key for their use.
+type Privilege = "admin" | "write" | "read"
+type PublicKey = string
+export function grant(group: string, priv: Privilege, to: PublicKey) {
+
+}
+export function revoke(group: string, priv: Privilege, to: PublicKey) {
+
+}
+
+// tql supports branching, tagging, and adoption
+// a branch is a logical copy of the database, unlike a group it can have its own modified schema and security
+export function createBranch(name: string) { }
+export function createTag(name: string) { }
+// merge local changes on top of changes from the source
+export function rebase(from: string) { }
+// like a cherry pick; makes this branch identical to the source
+export function adopt(from: string) { }
+
+
+export function viewOver(age: number) {
+    let a = artists // creates dependenciey on 
+    limit(100)
+    where(a.age > age)
+    order(a.name)
+    return {
+        name: a.name,
+        age: a.age,
+    }
+}
+// top 3 albums for each artist
+export function lateralJoin() {
+    artists.name == album.artist
+    const s = lateral(() => {
+        sold.name == album.name
+        limit(3)
+        order(sold.count)
+        return sold
+    })
+    return {
+        name: artists.name,
+        album: album.name,
+        count: sold.count
+    }
+}
+// all artists and albums
+export function outerJoin() {
+    artists.name == outer(album)?.artist
+    return {
+        name: artists.name,
+        album: album?.name ?? "not recorded"
+    }
+}
+// outer
+//let b = outer(artists)
+
+export function viewOver42b(n: number, y: string) {
+    let a = viewOver(42) // creates dependenciey on 
+    limit(n)
+    where(a.age < 62)
+    order(a.name)
+    return {
+        name: a.name,
+        age: a.age
+    }
+}
+
+// returns object so that can be updated on successful commit
+export const updateActor = (props: Partial<Artists>) => {
+    insert((x: Artists) => {
+        x = {
+            ...x,
+            ...props
+        }
+    })
+    update((x: Artists) => {
+        if (x.age > 42) {
+            x.name = "tim"
+        }
+    })
+    remove((x: Artists) => x.age < 32)
+
+    const updated = merge((x: Artists, y: Artists, matched: boolean) => {
+        if (x.name == y.name) { // on condition
+            // if matched is false, x will be defaults
+            if (matched) {
+                x.name = y.name  // y and x
+            } else {
+                x.name = y.name // y but no x
+            }
+        } else {
+            // here we have x, but not y
+            drop()
+        }
+    }
+    )
+
+    return {
+        updated
+    }
+}
+
+// by default resolve schema differences automatically. allow override
+// default export? optional argument for manual resolution of upgrades.
+export const albumSchema: Schema = {
+    artists,
+    viewOver,
+    viewOver42b,
+    updateActor,
+    outerJoin,
+}
+
+
+
+
+-ImportDeclaration: import { TextPart, emptyText, emptySheet, emptyPresent, where, index, limit, sort as order, primary, insert, update, remove, merge, drop, Schema, outer, SchemaObject, lateral, dictionary } from '../../dgos/src/dglib/db'
+--ImportClause: { TextPart, emptyText, emptySheet, emptyPresent, where, index, limit, sort as order, primary, insert, update, remove, merge, drop, Schema, outer, SchemaObject, lateral, dictionary }
+---NamedImports: { TextPart, emptyText, emptySheet, emptyPresent, where, index, limit, sort as order, primary, insert, update, remove, merge, drop, Schema, outer, SchemaObject, lateral, dictionary }
+----ImportSpecifier: TextPart
+-----Identifier: TextPart
+----ImportSpecifier: emptyText
+-----Identifier: emptyText
+----ImportSpecifier: emptySheet
+-----Identifier: emptySheet
+----ImportSpecifier: emptyPresent
+-----Identifier: emptyPresent
+----ImportSpecifier: where
+-----Identifier: where
+----ImportSpecifier: index
+-----Identifier: index
+----ImportSpecifier: limit
+-----Identifier: limit
+----ImportSpecifier: sort as order
+-----Identifier: sort
+-----Identifier: order
+----ImportSpecifier: primary
+-----Identifier: primary
+----ImportSpecifier: insert
+-----Identifier: insert
+----ImportSpecifier: update
+-----Identifier: update
+----ImportSpecifier: remove
+-----Identifier: remove
+----ImportSpecifier: merge
+-----Identifier: merge
+----ImportSpecifier: drop
+-----Identifier: drop
+----ImportSpecifier: Schema
+-----Identifier: Schema
+----ImportSpecifier: outer
+-----Identifier: outer
+----ImportSpecifier: SchemaObject
+-----Identifier: SchemaObject
+----ImportSpecifier: lateral
+-----Identifier: lateral
+----ImportSpecifier: dictionary
+-----Identifier: dictionary
+--StringLiteral: '../../dgos/src/dglib/db'
+-ImportDeclaration: import { } from 'solid-js/web'
+--ImportClause: { }
+---NamedImports: { }
+--StringLiteral: 'solid-js/web'
+-FirstStatement: const artists = {
+    name: "",
+    age: 0,
+    bio: emptyText,
+    budget: emptySheet,
+    hype: emptyPresent,
+}
+--VariableDeclarationList: const artists = {
+    name: "",
+    age: 0,
+    bio: emptyText,
+    budget: emptySheet,
+    hype: emptyPresent,
+}
+---VariableDeclaration: artists = {
+    name: "",
+    age: 0,
+    bio: emptyText,
+    budget: emptySheet,
+    hype: emptyPresent,
+}
+----Identifier: artists
+----ObjectLiteralExpression: {
+    name: "",
+    age: 0,
+    bio: emptyText,
+    budget: emptySheet,
+    hype: emptyPresent,
+}
+-----PropertyAssignment: name: ""
+------Identifier: name
+------StringLiteral: ""
+-----PropertyAssignment: age: 0
+------Identifier: age
+------FirstLiteralToken: 0
+-----PropertyAssignment: bio: emptyText
+------Identifier: bio
+------Identifier: emptyText
+-----PropertyAssignment: budget: emptySheet
+------Identifier: budget
+------Identifier: emptySheet
+-----PropertyAssignment: hype: emptyPresent
+------Identifier: hype
+------Identifier: emptyPresent
+-TypeAliasDeclaration: type Artists = typeof artists
+--Identifier: Artists
+--TypeQuery: typeof artists
+---Identifier: artists
+-ExpressionStatement: primary(artists.name)
+--CallExpression: primary(artists.name)
+---Identifier: primary
+---PropertyAccessExpression: artists.name
+----Identifier: artists
+----Identifier: name
+-FirstStatement: const album = {
+    name: "",
+    artist: "",
+}
+--VariableDeclarationList: const album = {
+    name: "",
+    artist: "",
+}
+---VariableDeclaration: album = {
+    name: "",
+    artist: "",
+}
+----Identifier: album
+----ObjectLiteralExpression: {
+    name: "",
+    artist: "",
+}
+-----PropertyAssignment: name: ""
+------Identifier: name
+------StringLiteral: ""
+-----PropertyAssignment: artist: ""
+------Identifier: artist
+------StringLiteral: ""
+-TypeAliasDeclaration: export type Album = typeof artists
+--ExportKeyword: export
+--Identifier: Album
+--TypeQuery: typeof artists
+---Identifier: artists
+-ExpressionStatement: primary(album.name)
+--CallExpression: primary(album.name)
+---Identifier: primary
+---PropertyAccessExpression: album.name
+----Identifier: album
+----Identifier: name
+-FirstStatement: const sold = {
+    name: "",
+    count: 0,
+}
+--VariableDeclarationList: const sold = {
+    name: "",
+    count: 0,
+}
+---VariableDeclaration: sold = {
+    name: "",
+    count: 0,
+}
+----Identifier: sold
+----ObjectLiteralExpression: {
+    name: "",
+    count: 0,
+}
+-----PropertyAssignment: name: ""
+------Identifier: name
+------StringLiteral: ""
+-----PropertyAssignment: count: 0
+------Identifier: count
+------FirstLiteralToken: 0
+-TypeAliasDeclaration: export type Sold = typeof sold
+--ExportKeyword: export
+--Identifier: Sold
+--TypeQuery: typeof sold
+---Identifier: sold
+-ExpressionStatement: primary(album.name)
+--CallExpression: primary(album.name)
+---Identifier: primary
+---PropertyAccessExpression: album.name
+----Identifier: album
+----Identifier: name
+-FunctionDeclaration: export function updateBio() {
+    const el = <em>STAR!!</em>
+
+    update((x: TextPart) => {
+        if (x.rowid == BigInt(0)) {
+            x.data.splice(100, 1, el)
+        }
+    })
+}
+--ExportKeyword: export
+--Identifier: updateBio
+--Block: {
+    const el = <em>STAR!!</em>
+
+    update((x: TextPart) => {
+        if (x.rowid == BigInt(0)) {
+            x.data.splice(100, 1, el)
+        }
+    })
+}
+---FirstStatement: const el = <em>STAR!!</em>
+----VariableDeclarationList: const el = <em>STAR!!</em>
+-----VariableDeclaration: el = <em>STAR!!</em>
+------Identifier: el
+------JsxElement: <em>STAR!!</em>
+-------JsxOpeningElement: <em>
+--------Identifier: em
+--------JsxAttributes: 
+-------JsxText: STAR!!
+-------JsxClosingElement: </em>
+--------Identifier: em
+---ExpressionStatement: update((x: TextPart) => {
+        if (x.rowid == BigInt(0)) {
+            x.data.splice(100, 1, el)
+        }
+    })
+----CallExpression: update((x: TextPart) => {
+        if (x.rowid == BigInt(0)) {
+            x.data.splice(100, 1, el)
+        }
+    })
+-----Identifier: update
+-----ArrowFunction: (x: TextPart) => {
+        if (x.rowid == BigInt(0)) {
+            x.data.splice(100, 1, el)
+        }
+    }
+------Parameter: x: TextPart
+-------Identifier: x
+-------TypeReference: TextPart
+--------Identifier: TextPart
+------EqualsGreaterThanToken: =>
+------Block: {
+        if (x.rowid == BigInt(0)) {
+            x.data.splice(100, 1, el)
+        }
+    }
+-------IfStatement: if (x.rowid == BigInt(0)) {
+            x.data.splice(100, 1, el)
+        }
+--------BinaryExpression: x.rowid == BigInt(0)
+---------PropertyAccessExpression: x.rowid
+----------Identifier: x
+----------Identifier: rowid
+---------EqualsEqualsToken: ==
+---------CallExpression: BigInt(0)
+----------Identifier: BigInt
+----------FirstLiteralToken: 0
+--------Block: {
+            x.data.splice(100, 1, el)
+        }
+---------ExpressionStatement: x.data.splice(100, 1, el)
+----------CallExpression: x.data.splice(100, 1, el)
+-----------PropertyAccessExpression: x.data.splice
+------------PropertyAccessExpression: x.data
+-------------Identifier: x
+-------------Identifier: data
+------------Identifier: splice
+-----------FirstLiteralToken: 100
+-----------FirstLiteralToken: 1
+-----------Identifier: el
+-FunctionDeclaration: export function updateBudget() {
+    // inserting a sheet, row, or column will allocate a new id locally that will be converted to a global id on the server
+    // normal insertion for the value, and ordered insertion for the position.
+
+
+}
+--ExportKeyword: export
+--Identifier: updateBudget
+--Block: {
+    // inserting a sheet, row, or column will allocate a new id locally that will be converted to a global id on the server
+    // normal insertion for the value, and ordered insertion for the position.
+
+
+}
+-FunctionDeclaration: export function createGroup(name: string) {
+}
+--ExportKeyword: export
+--Identifier: createGroup
+--Parameter: name: string
+---Identifier: name
+---StringKeyword: string
+--Block: {
+}
+-TypeAliasDeclaration: type Privilege = "admin" | "write" | "read"
+--Identifier: Privilege
+--UnionType: "admin" | "write" | "read"
+---LiteralType: "admin"
+----StringLiteral: "admin"
+---LiteralType: "write"
+----StringLiteral: "write"
+---LiteralType: "read"
+----StringLiteral: "read"
+-TypeAliasDeclaration: type PublicKey = string
+--Identifier: PublicKey
+--StringKeyword: string
+-FunctionDeclaration: export function grant(group: string, priv: Privilege, to: PublicKey) {
+
+}
+--ExportKeyword: export
+--Identifier: grant
+--Parameter: group: string
+---Identifier: group
+---StringKeyword: string
+--Parameter: priv: Privilege
+---Identifier: priv
+---TypeReference: Privilege
+----Identifier: Privilege
+--Parameter: to: PublicKey
+---Identifier: to
+---TypeReference: PublicKey
+----Identifier: PublicKey
+--Block: {
+
+}
+-FunctionDeclaration: export function revoke(group: string, priv: Privilege, to: PublicKey) {
+
+}
+--ExportKeyword: export
+--Identifier: revoke
+--Parameter: group: string
+---Identifier: group
+---StringKeyword: string
+--Parameter: priv: Privilege
+---Identifier: priv
+---TypeReference: Privilege
+----Identifier: Privilege
+--Parameter: to: PublicKey
+---Identifier: to
+---TypeReference: PublicKey
+----Identifier: PublicKey
+--Block: {
+
+}
+-FunctionDeclaration: export function createBranch(name: string) { }
+--ExportKeyword: export
+--Identifier: createBranch
+--Parameter: name: string
+---Identifier: name
+---StringKeyword: string
+--Block: { }
+-FunctionDeclaration: export function createTag(name: string) { }
+--ExportKeyword: export
+--Identifier: createTag
+--Parameter: name: string
+---Identifier: name
+---StringKeyword: string
+--Block: { }
+-FunctionDeclaration: export function rebase(from: string) { }
+--ExportKeyword: export
+--Identifier: rebase
+--Parameter: from: string
+---Identifier: from
+---StringKeyword: string
+--Block: { }
+-FunctionDeclaration: export function adopt(from: string) { }
+--ExportKeyword: export
+--Identifier: adopt
+--Parameter: from: string
+---Identifier: from
+---StringKeyword: string
+--Block: { }
+-FunctionDeclaration: export function viewOver(age: number) {
+    let a = artists // creates dependenciey on 
+    limit(100)
+    where(a.age > age)
+    order(a.name)
+    return {
+        name: a.name,
+        age: a.age,
+    }
+}
+--ExportKeyword: export
+--Identifier: viewOver
+--Parameter: age: number
+---Identifier: age
+---NumberKeyword: number
+--Block: {
+    let a = artists // creates dependenciey on 
+    limit(100)
+    where(a.age > age)
+    order(a.name)
+    return {
+        name: a.name,
+        age: a.age,
+    }
+}
+---FirstStatement: let a = artists
+----VariableDeclarationList: let a = artists
+-----VariableDeclaration: a = artists
+------Identifier: a
+------Identifier: artists
+---ExpressionStatement: limit(100)
+----CallExpression: limit(100)
+-----Identifier: limit
+-----FirstLiteralToken: 100
+---ExpressionStatement: where(a.age > age)
+----CallExpression: where(a.age > age)
+-----Identifier: where
+-----BinaryExpression: a.age > age
+------PropertyAccessExpression: a.age
+-------Identifier: a
+-------Identifier: age
+------GreaterThanToken: >
+------Identifier: age
+---ExpressionStatement: order(a.name)
+----CallExpression: order(a.name)
+-----Identifier: order
+-----PropertyAccessExpression: a.name
+------Identifier: a
+------Identifier: name
+---ReturnStatement: return {
+        name: a.name,
+        age: a.age,
+    }
+----ObjectLiteralExpression: {
+        name: a.name,
+        age: a.age,
+    }
+-----PropertyAssignment: name: a.name
+------Identifier: name
+------PropertyAccessExpression: a.name
+-------Identifier: a
+-------Identifier: name
+-----PropertyAssignment: age: a.age
+------Identifier: age
+------PropertyAccessExpression: a.age
+-------Identifier: a
+-------Identifier: age
+-FunctionDeclaration: export function lateralJoin() {
+    artists.name == album.artist
+    const s = lateral(() => {
+        sold.name == album.name
+        limit(3)
+        order(sold.count)
+        return sold
+    })
+    return {
+        name: artists.name,
+        album: album.name,
+        count: sold.count
+    }
+}
+--ExportKeyword: export
+--Identifier: lateralJoin
+--Block: {
+    artists.name == album.artist
+    const s = lateral(() => {
+        sold.name == album.name
+        limit(3)
+        order(sold.count)
+        return sold
+    })
+    return {
+        name: artists.name,
+        album: album.name,
+        count: sold.count
+    }
+}
+---ExpressionStatement: artists.name == album.artist
+----BinaryExpression: artists.name == album.artist
+-----PropertyAccessExpression: artists.name
+------Identifier: artists
+------Identifier: name
+-----EqualsEqualsToken: ==
+-----PropertyAccessExpression: album.artist
+------Identifier: album
+------Identifier: artist
+---FirstStatement: const s = lateral(() => {
+        sold.name == album.name
+        limit(3)
+        order(sold.count)
+        return sold
+    })
+----VariableDeclarationList: const s = lateral(() => {
+        sold.name == album.name
+        limit(3)
+        order(sold.count)
+        return sold
+    })
+-----VariableDeclaration: s = lateral(() => {
+        sold.name == album.name
+        limit(3)
+        order(sold.count)
+        return sold
+    })
+------Identifier: s
+------CallExpression: lateral(() => {
+        sold.name == album.name
+        limit(3)
+        order(sold.count)
+        return sold
+    })
+-------Identifier: lateral
+-------ArrowFunction: () => {
+        sold.name == album.name
+        limit(3)
+        order(sold.count)
+        return sold
+    }
+--------EqualsGreaterThanToken: =>
+--------Block: {
+        sold.name == album.name
+        limit(3)
+        order(sold.count)
+        return sold
+    }
+---------ExpressionStatement: sold.name == album.name
+----------BinaryExpression: sold.name == album.name
+-----------PropertyAccessExpression: sold.name
+------------Identifier: sold
+------------Identifier: name
+-----------EqualsEqualsToken: ==
+-----------PropertyAccessExpression: album.name
+------------Identifier: album
+------------Identifier: name
+---------ExpressionStatement: limit(3)
+----------CallExpression: limit(3)
+-----------Identifier: limit
+-----------FirstLiteralToken: 3
+---------ExpressionStatement: order(sold.count)
+----------CallExpression: order(sold.count)
+-----------Identifier: order
+-----------PropertyAccessExpression: sold.count
+------------Identifier: sold
+------------Identifier: count
+---------ReturnStatement: return sold
+----------Identifier: sold
+---ReturnStatement: return {
+        name: artists.name,
+        album: album.name,
+        count: sold.count
+    }
+----ObjectLiteralExpression: {
+        name: artists.name,
+        album: album.name,
+        count: sold.count
+    }
+-----PropertyAssignment: name: artists.name
+------Identifier: name
+------PropertyAccessExpression: artists.name
+-------Identifier: artists
+-------Identifier: name
+-----PropertyAssignment: album: album.name
+------Identifier: album
+------PropertyAccessExpression: album.name
+-------Identifier: album
+-------Identifier: name
+-----PropertyAssignment: count: sold.count
+------Identifier: count
+------PropertyAccessExpression: sold.count
+-------Identifier: sold
+-------Identifier: count
+-FunctionDeclaration: export function outerJoin() {
+    artists.name == outer(album)?.artist
+    return {
+        name: artists.name,
+        album: album?.name ?? "not recorded"
+    }
+}
+--ExportKeyword: export
+--Identifier: outerJoin
+--Block: {
+    artists.name == outer(album)?.artist
+    return {
+        name: artists.name,
+        album: album?.name ?? "not recorded"
+    }
+}
+---ExpressionStatement: artists.name == outer(album)?.artist
+----BinaryExpression: artists.name == outer(album)?.artist
+-----PropertyAccessExpression: artists.name
+------Identifier: artists
+------Identifier: name
+-----EqualsEqualsToken: ==
+-----PropertyAccessExpression: outer(album)?.artist
+------CallExpression: outer(album)
+-------Identifier: outer
+-------Identifier: album
+------QuestionDotToken: ?.
+------Identifier: artist
+---ReturnStatement: return {
+        name: artists.name,
+        album: album?.name ?? "not recorded"
+    }
+----ObjectLiteralExpression: {
+        name: artists.name,
+        album: album?.name ?? "not recorded"
+    }
+-----PropertyAssignment: name: artists.name
+------Identifier: name
+------PropertyAccessExpression: artists.name
+-------Identifier: artists
+-------Identifier: name
+-----PropertyAssignment: album: album?.name ?? "not recorded"
+------Identifier: album
+------BinaryExpression: album?.name ?? "not recorded"
+-------PropertyAccessExpression: album?.name
+--------Identifier: album
+--------QuestionDotToken: ?.
+--------Identifier: name
+-------QuestionQuestionToken: ??
+-------StringLiteral: "not recorded"
+-FunctionDeclaration: export function viewOver42b(n: number, y: string) {
+    let a = viewOver(42) // creates dependenciey on 
+    limit(n)
+    where(a.age < 62)
+    order(a.name)
+    return {
+        name: a.name,
+        age: a.age
+    }
+}
+--ExportKeyword: export
+--Identifier: viewOver42b
+--Parameter: n: number
+---Identifier: n
+---NumberKeyword: number
+--Parameter: y: string
+---Identifier: y
+---StringKeyword: string
+--Block: {
+    let a = viewOver(42) // creates dependenciey on 
+    limit(n)
+    where(a.age < 62)
+    order(a.name)
+    return {
+        name: a.name,
+        age: a.age
+    }
+}
+---FirstStatement: let a = viewOver(42)
+----VariableDeclarationList: let a = viewOver(42)
+-----VariableDeclaration: a = viewOver(42)
+------Identifier: a
+------CallExpression: viewOver(42)
+-------Identifier: viewOver
+-------FirstLiteralToken: 42
+---ExpressionStatement: limit(n)
+----CallExpression: limit(n)
+-----Identifier: limit
+-----Identifier: n
+---ExpressionStatement: where(a.age < 62)
+----CallExpression: where(a.age < 62)
+-----Identifier: where
+-----BinaryExpression: a.age < 62
+------PropertyAccessExpression: a.age
+-------Identifier: a
+-------Identifier: age
+------FirstBinaryOperator: <
+------FirstLiteralToken: 62
+---ExpressionStatement: order(a.name)
+----CallExpression: order(a.name)
+-----Identifier: order
+-----PropertyAccessExpression: a.name
+------Identifier: a
+------Identifier: name
+---ReturnStatement: return {
+        name: a.name,
+        age: a.age
+    }
+----ObjectLiteralExpression: {
+        name: a.name,
+        age: a.age
+    }
+-----PropertyAssignment: name: a.name
+------Identifier: name
+------PropertyAccessExpression: a.name
+-------Identifier: a
+-------Identifier: name
+-----PropertyAssignment: age: a.age
+------Identifier: age
+------PropertyAccessExpression: a.age
+-------Identifier: a
+-------Identifier: age
+-FirstStatement: export const updateActor = (props: Partial<Artists>) => {
+    insert((x: Artists) => {
+        x = {
+            ...x,
+            ...props
+        }
+    })
+    update((x: Artists) => {
+        if (x.age > 42) {
+            x.name = "tim"
+        }
+    })
+    remove((x: Artists) => x.age < 32)
+
+    const updated = merge((x: Artists, y: Artists, matched: boolean) => {
+        if (x.name == y.name) { // on condition
+            // if matched is false, x will be defaults
+            if (matched) {
+                x.name = y.name  // y and x
+            } else {
+                x.name = y.name // y but no x
+            }
+        } else {
+            // here we have x, but not y
+            drop()
+        }
+    }
+    )
+
+    return {
+        updated
+    }
+}
+--ExportKeyword: export
+--VariableDeclarationList: const updateActor = (props: Partial<Artists>) => {
+    insert((x: Artists) => {
+        x = {
+            ...x,
+            ...props
+        }
+    })
+    update((x: Artists) => {
+        if (x.age > 42) {
+            x.name = "tim"
+        }
+    })
+    remove((x: Artists) => x.age < 32)
+
+    const updated = merge((x: Artists, y: Artists, matched: boolean) => {
+        if (x.name == y.name) { // on condition
+            // if matched is false, x will be defaults
+            if (matched) {
+                x.name = y.name  // y and x
+            } else {
+                x.name = y.name // y but no x
+            }
+        } else {
+            // here we have x, but not y
+            drop()
+        }
+    }
+    )
+
+    return {
+        updated
+    }
+}
+---VariableDeclaration: updateActor = (props: Partial<Artists>) => {
+    insert((x: Artists) => {
+        x = {
+            ...x,
+            ...props
+        }
+    })
+    update((x: Artists) => {
+        if (x.age > 42) {
+            x.name = "tim"
+        }
+    })
+    remove((x: Artists) => x.age < 32)
+
+    const updated = merge((x: Artists, y: Artists, matched: boolean) => {
+        if (x.name == y.name) { // on condition
+            // if matched is false, x will be defaults
+            if (matched) {
+                x.name = y.name  // y and x
+            } else {
+                x.name = y.name // y but no x
+            }
+        } else {
+            // here we have x, but not y
+            drop()
+        }
+    }
+    )
+
+    return {
+        updated
+    }
+}
+----Identifier: updateActor
+----ArrowFunction: (props: Partial<Artists>) => {
+    insert((x: Artists) => {
+        x = {
+            ...x,
+            ...props
+        }
+    })
+    update((x: Artists) => {
+        if (x.age > 42) {
+            x.name = "tim"
+        }
+    })
+    remove((x: Artists) => x.age < 32)
+
+    const updated = merge((x: Artists, y: Artists, matched: boolean) => {
+        if (x.name == y.name) { // on condition
+            // if matched is false, x will be defaults
+            if (matched) {
+                x.name = y.name  // y and x
+            } else {
+                x.name = y.name // y but no x
+            }
+        } else {
+            // here we have x, but not y
+            drop()
+        }
+    }
+    )
+
+    return {
+        updated
+    }
+}
+-----Parameter: props: Partial<Artists>
+------Identifier: props
+------TypeReference: Partial<Artists>
+-------Identifier: Partial
+-------TypeReference: Artists
+--------Identifier: Artists
+-----EqualsGreaterThanToken: =>
+-----Block: {
+    insert((x: Artists) => {
+        x = {
+            ...x,
+            ...props
+        }
+    })
+    update((x: Artists) => {
+        if (x.age > 42) {
+            x.name = "tim"
+        }
+    })
+    remove((x: Artists) => x.age < 32)
+
+    const updated = merge((x: Artists, y: Artists, matched: boolean) => {
+        if (x.name == y.name) { // on condition
+            // if matched is false, x will be defaults
+            if (matched) {
+                x.name = y.name  // y and x
+            } else {
+                x.name = y.name // y but no x
+            }
+        } else {
+            // here we have x, but not y
+            drop()
+        }
+    }
+    )
+
+    return {
+        updated
+    }
+}
+------ExpressionStatement: insert((x: Artists) => {
+        x = {
+            ...x,
+            ...props
+        }
+    })
+-------CallExpression: insert((x: Artists) => {
+        x = {
+            ...x,
+            ...props
+        }
+    })
+--------Identifier: insert
+--------ArrowFunction: (x: Artists) => {
+        x = {
+            ...x,
+            ...props
+        }
+    }
+---------Parameter: x: Artists
+----------Identifier: x
+----------TypeReference: Artists
+-----------Identifier: Artists
+---------EqualsGreaterThanToken: =>
+---------Block: {
+        x = {
+            ...x,
+            ...props
+        }
+    }
+----------ExpressionStatement: x = {
+            ...x,
+            ...props
+        }
+-----------BinaryExpression: x = {
+            ...x,
+            ...props
+        }
+------------Identifier: x
+------------FirstAssignment: =
+------------ObjectLiteralExpression: {
+            ...x,
+            ...props
+        }
+-------------SpreadAssignment: ...x
+--------------Identifier: x
+-------------SpreadAssignment: ...props
+--------------Identifier: props
+------ExpressionStatement: update((x: Artists) => {
+        if (x.age > 42) {
+            x.name = "tim"
+        }
+    })
+-------CallExpression: update((x: Artists) => {
+        if (x.age > 42) {
+            x.name = "tim"
+        }
+    })
+--------Identifier: update
+--------ArrowFunction: (x: Artists) => {
+        if (x.age > 42) {
+            x.name = "tim"
+        }
+    }
+---------Parameter: x: Artists
+----------Identifier: x
+----------TypeReference: Artists
+-----------Identifier: Artists
+---------EqualsGreaterThanToken: =>
+---------Block: {
+        if (x.age > 42) {
+            x.name = "tim"
+        }
+    }
+----------IfStatement: if (x.age > 42) {
+            x.name = "tim"
+        }
+-----------BinaryExpression: x.age > 42
+------------PropertyAccessExpression: x.age
+-------------Identifier: x
+-------------Identifier: age
+------------GreaterThanToken: >
+------------FirstLiteralToken: 42
+-----------Block: {
+            x.name = "tim"
+        }
+------------ExpressionStatement: x.name = "tim"
+-------------BinaryExpression: x.name = "tim"
+--------------PropertyAccessExpression: x.name
+---------------Identifier: x
+---------------Identifier: name
+--------------FirstAssignment: =
+--------------StringLiteral: "tim"
+------ExpressionStatement: remove((x: Artists) => x.age < 32)
+-------CallExpression: remove((x: Artists) => x.age < 32)
+--------Identifier: remove
+--------ArrowFunction: (x: Artists) => x.age < 32
+---------Parameter: x: Artists
+----------Identifier: x
+----------TypeReference: Artists
+-----------Identifier: Artists
+---------EqualsGreaterThanToken: =>
+---------BinaryExpression: x.age < 32
+----------PropertyAccessExpression: x.age
+-----------Identifier: x
+-----------Identifier: age
+----------FirstBinaryOperator: <
+----------FirstLiteralToken: 32
+------FirstStatement: const updated = merge((x: Artists, y: Artists, matched: boolean) => {
+        if (x.name == y.name) { // on condition
+            // if matched is false, x will be defaults
+            if (matched) {
+                x.name = y.name  // y and x
+            } else {
+                x.name = y.name // y but no x
+            }
+        } else {
+            // here we have x, but not y
+            drop()
+        }
+    }
+    )
+-------VariableDeclarationList: const updated = merge((x: Artists, y: Artists, matched: boolean) => {
+        if (x.name == y.name) { // on condition
+            // if matched is false, x will be defaults
+            if (matched) {
+                x.name = y.name  // y and x
+            } else {
+                x.name = y.name // y but no x
+            }
+        } else {
+            // here we have x, but not y
+            drop()
+        }
+    }
+    )
+--------VariableDeclaration: updated = merge((x: Artists, y: Artists, matched: boolean) => {
+        if (x.name == y.name) { // on condition
+            // if matched is false, x will be defaults
+            if (matched) {
+                x.name = y.name  // y and x
+            } else {
+                x.name = y.name // y but no x
+            }
+        } else {
+            // here we have x, but not y
+            drop()
+        }
+    }
+    )
+---------Identifier: updated
+---------CallExpression: merge((x: Artists, y: Artists, matched: boolean) => {
+        if (x.name == y.name) { // on condition
+            // if matched is false, x will be defaults
+            if (matched) {
+                x.name = y.name  // y and x
+            } else {
+                x.name = y.name // y but no x
+            }
+        } else {
+            // here we have x, but not y
+            drop()
+        }
+    }
+    )
+----------Identifier: merge
+----------ArrowFunction: (x: Artists, y: Artists, matched: boolean) => {
+        if (x.name == y.name) { // on condition
+            // if matched is false, x will be defaults
+            if (matched) {
+                x.name = y.name  // y and x
+            } else {
+                x.name = y.name // y but no x
+            }
+        } else {
+            // here we have x, but not y
+            drop()
+        }
+    }
+-----------Parameter: x: Artists
+------------Identifier: x
+------------TypeReference: Artists
+-------------Identifier: Artists
+-----------Parameter: y: Artists
+------------Identifier: y
+------------TypeReference: Artists
+-------------Identifier: Artists
+-----------Parameter: matched: boolean
+------------Identifier: matched
+------------BooleanKeyword: boolean
+-----------EqualsGreaterThanToken: =>
+-----------Block: {
+        if (x.name == y.name) { // on condition
+            // if matched is false, x will be defaults
+            if (matched) {
+                x.name = y.name  // y and x
+            } else {
+                x.name = y.name // y but no x
+            }
+        } else {
+            // here we have x, but not y
+            drop()
+        }
+    }
+------------IfStatement: if (x.name == y.name) { // on condition
+            // if matched is false, x will be defaults
+            if (matched) {
+                x.name = y.name  // y and x
+            } else {
+                x.name = y.name // y but no x
+            }
+        } else {
+            // here we have x, but not y
+            drop()
+        }
+-------------BinaryExpression: x.name == y.name
+--------------PropertyAccessExpression: x.name
+---------------Identifier: x
+---------------Identifier: name
+--------------EqualsEqualsToken: ==
+--------------PropertyAccessExpression: y.name
+---------------Identifier: y
+---------------Identifier: name
+-------------Block: { // on condition
+            // if matched is false, x will be defaults
+            if (matched) {
+                x.name = y.name  // y and x
+            } else {
+                x.name = y.name // y but no x
+            }
+        }
+--------------IfStatement: if (matched) {
+                x.name = y.name  // y and x
+            } else {
+                x.name = y.name // y but no x
+            }
+---------------Identifier: matched
+---------------Block: {
+                x.name = y.name  // y and x
+            }
+----------------ExpressionStatement: x.name = y.name
+-----------------BinaryExpression: x.name = y.name
+------------------PropertyAccessExpression: x.name
+-------------------Identifier: x
+-------------------Identifier: name
+------------------FirstAssignment: =
+------------------PropertyAccessExpression: y.name
+-------------------Identifier: y
+-------------------Identifier: name
+---------------Block: {
+                x.name = y.name // y but no x
+            }
+----------------ExpressionStatement: x.name = y.name
+-----------------BinaryExpression: x.name = y.name
+------------------PropertyAccessExpression: x.name
+-------------------Identifier: x
+-------------------Identifier: name
+------------------FirstAssignment: =
+------------------PropertyAccessExpression: y.name
+-------------------Identifier: y
+-------------------Identifier: name
+-------------Block: {
+            // here we have x, but not y
+            drop()
+        }
+--------------ExpressionStatement: drop()
+---------------CallExpression: drop()
+----------------Identifier: drop
+------ReturnStatement: return {
+        updated
+    }
+-------ObjectLiteralExpression: {
+        updated
+    }
+--------ShorthandPropertyAssignment: updated
+---------Identifier: updated
+-FirstStatement: export const albumSchema: Schema = {
+    artists,
+    viewOver,
+    viewOver42b,
+    updateActor,
+    outerJoin,
+}
+--ExportKeyword: export
+--VariableDeclarationList: const albumSchema: Schema = {
+    artists,
+    viewOver,
+    viewOver42b,
+    updateActor,
+    outerJoin,
+}
+---VariableDeclaration: albumSchema: Schema = {
+    artists,
+    viewOver,
+    viewOver42b,
+    updateActor,
+    outerJoin,
+}
+----Identifier: albumSchema
+----TypeReference: Schema
+-----Identifier: Schema
+----ObjectLiteralExpression: {
+    artists,
+    viewOver,
+    viewOver42b,
+    updateActor,
+    outerJoin,
+}
+-----ShorthandPropertyAssignment: artists
+------Identifier: artists
+-----ShorthandPropertyAssignment: viewOver
+------Identifier: viewOver
+-----ShorthandPropertyAssignment: viewOver42b
+------Identifier: viewOver42b
+-----ShorthandPropertyAssignment: updateActor
+------Identifier: updateActor
+-----ShorthandPropertyAssignment: outerJoin
+------Identifier: outerJoin
+-EndOfFileToken: 

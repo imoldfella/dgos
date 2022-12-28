@@ -1,120 +1,34 @@
+/* @jsxImportSource solid-js */
+import { TextPart, emptyText, emptySheet, emptyPresent, where, index, limit, sort as order, primary, insert, update, remove, merge, drop, Schema, outer, SchemaObject, lateral, dictionary, sys as base } from '../../dgos/src/dglib/db'
 
-import { runInThisContext } from 'vm'
-import { where, limit, sort as order, primary, insert, update, remove, merge, drop, Schema, outer, SchemaObject, lateral } from '../../dgos/src/dglib/db'
-
-
-// global structs used in relevant functions (e.g) primary are tables
-// functions are views/queries and transactions. transactions can be identified because they call insert,remove, etc
-type RichText = {}
-const emptyRichText = [] as RichText[]
-type CellValue = {}
-const emptyCell = [] as CellValue[]
-function schema(a: any, b: any) { }
-const Markdown = ""
-
-const duid = BigInt(0)
-
-
-// we support an extensible concept of documents in the database
-// these documents can be referenced by in cells, including an overall file system per group that holds all the files that group can read. Each user can view this as a single file system where the top level folders are the groups the user belongs to.
-
-// uses the rowid for a primary key.
-export const doc = {
-    createdTx: 0,  // the transaction the document was created. It becomes an alternate key preferred to docuuid when its available
-    name: "untitled",
-}
-
-export const ssdoc = {
-    ...doc
-}
-
-export const sscell = {
-    row: 0, col: 0, sheet: 0, cellType: 0, cellValue: emptyCell
-}
-// tql can manage rich text and other arrays
-// rich text can be typed with prosemirror schemas, including an extended Markdown one
-const bio = {
-    name: "",
-    bio: emptyRichText
-}
-schema(bio.name, Markdown)
-type Bio = typeof bio
-primary(bio.name)
-// nohistory(bio.bio) default is to maintain history on 
-
-// we can incrementally modify arrays and use tsx. Updates automatically rebase, or disable with commit({rebase: false})
-export function updateBio() {
-    update((x: Bio) => {
-        if (bio.name == "joe") {
-            x.bio.splice(100, 1, <em>STAR!!</em>)
-        }
-    })
-}
-
-// a spreadsheet is 
-// create table sscell (doc,col,row,value)
-// create table ssdoc (doc,row[],col[],sheet[],meta1,...)
-export function updateSpreadsheet() {
-
-}
-
-// tql supports row level security, and a easy to use template called concierge 
-// each table by default has a groupid attribute for row level security.
-// createGroup assigns the next available id.
-// id 0 can access all the rows, each
-export function createGroup(name: string) {
-}
-// grant to a user
-// inserts the user into role table, encrypts an access key for their use.
-type Privilege = "admin" | "write" | "read"
-type PublicKey = string
-export function grant(group: string, priv: Privilege, to: PublicKey) {
-
-}
-export function revoke(group: string, priv: Privilege, to: PublicKey) {
-
-}
-
-// tql supports branching, tagging, and adoption
-// a branch is a logical copy of the database, unlike a group it can have its own modified schema and security
-export function createBranch(name: string) { }
-export function createTag(name: string) { }
-// merge local changes on top of changes from the source
-export function rebase(from: string) { }
-// like a cherry pick; makes this branch identical to the source
-export function adopt(from: string) { }
-
+// define tables
 const artists = {
+    ...base,
     name: "",
-    age: 0
+    age: 0,
+    bio: emptyText,
+    budget: emptySheet,
+    hype: emptyPresent,
 }
 type Artists = typeof artists
 primary(artists.name)
 
 const album = {
+    ...base,
     name: "",
     artist: "",
 }
-type Album = typeof artists
+export type Album = typeof artists
 primary(album.name)
 
 const sold = {
+    ...base,
     name: "",
     count: 0,
 }
-type Sold = typeof sold
+export type Sold = typeof sold
 primary(album.name)
 
-export function viewOver(age: number) {
-    let a = artists // creates dependenciey on 
-    limit(100)
-    where(a.age > age)
-    order(a.name)
-    return {
-        name: a.name,
-        age: a.age,
-    }
-}
 // top 3 albums for each artist
 export function lateralJoin() {
     artists.name == album.artist
@@ -130,6 +44,7 @@ export function lateralJoin() {
         count: sold.count
     }
 }
+
 // all artists and albums
 export function outerJoin() {
     artists.name == outer(album)?.artist
@@ -139,6 +54,38 @@ export function outerJoin() {
     }
 }
 // outer
+// we can incrementally modify arrays and use tsx. Updates automatically rebase, or disable with commit({rebase: false})
+export function updateBio() {
+    const el = <em>STAR!!</em>
+
+    update((x: TextPart) => {
+        if (x.rowid == BigInt(0)) {
+            x.data.splice(100, 1, el)
+        }
+    })
+}
+
+// a spreadsheet is 
+// create table sscell (doc,col,row,value)
+// create table ssdoc (doc,row[],col[],sheet[],meta1,...)
+export function updateBudget() {
+    // inserting a sheet, row, or column will allocate a new id locally that will be converted to a global id on the server
+    // normal insertion for the value, and ordered insertion for the position.
+
+
+}
+
+export function viewOver(age: number) {
+    let a = artists // creates dependenciey on 
+    limit(100)
+    where(a.age > age)
+    order(a.name)
+    return {
+        name: a.name,
+        age: a.age,
+    }
+}
+
 //let b = outer(artists)
 
 export function viewOver42b(n: number, y: string) {
@@ -153,9 +100,12 @@ export function viewOver42b(n: number, y: string) {
 }
 
 // returns object so that can be updated on successful commit
-export const updateActor = (props: { name: string, age: number }) => {
+export const updateActor = (props: Partial<Artists>) => {
     insert((x: Artists) => {
-        x = props
+        x = {
+            ...x,
+            ...props
+        }
     })
     update((x: Artists) => {
         if (x.age > 42) {
@@ -196,24 +146,3 @@ export const albumSchema: Schema = {
 
 
 
-
-
-/*
-MERGE TargetProducts AS Target
-USING SourceProducts	AS Source
-ON Source.ProductID = Target.ProductID
-    
--- For Inserts
-WHEN NOT MATCHED BY Target THEN
-    INSERT (ProductID,ProductName, Price) 
-    VALUES (Source.ProductID,Source.ProductName, Source.Price)
-    
--- For Updates
-WHEN MATCHED THEN UPDATE SET
-    Target.ProductName	= Source.ProductName,
-    Target.Price		= Source.Price
-    
--- For Deletes
-WHEN NOT MATCHED BY Source THEN
-    DELETE
-*/
