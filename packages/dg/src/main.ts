@@ -14,15 +14,16 @@ async function server() {
   const svr = createDbms()
   console.log(`dg server ${version},${process.version}`)
   const wss = new WebSocket.Server({ port: 8080 });
- 
-  wss.on('connection',  (ws) => {
+
+  wss.on('connection', (ws) => {
     ws.on('message', function incoming(message) {
       console.log('received: %s', message);
     });
-  
+
     ws.send('something');
   });
 }
+
 
 async function client() {
   console.log(`dg client ${version},${process.version}`)
@@ -37,23 +38,23 @@ async function watch() {
 }
 
 async function main() {
-yargs
-  .scriptName('dg')
-  .usage("$0 command")
-  .version(version)
-  .command({
-    command: 'compile schema.ts ...',
-    aliases: ['c'],
-    describe: 'compile database schemas',
-    handler: async parsed => {
-      await compile()
-    },
-  })
-  .command({
+  yargs
+    .scriptName('dg')
+    .usage("$0 command")
+    .version(version)
+    .command({
+      command: 'compile schema.ts ...',
+      aliases: ['c'],
+      describe: 'compile database schemas',
+      handler: async parsed => {
+        await compile()
+      },
+    })
+    .command({
       command: 'server',
       aliases: ['s'],
       describe: 'datagrove server',
-      handler: async  parsed => {
+      handler: async parsed => {
         await server()
       },
     })
@@ -65,7 +66,7 @@ yargs
         await client()
       },
     })
-  .command({
+    .command({
       command: 'watch',
       aliases: ['w'],
       describe: 'watch mode',
@@ -73,8 +74,8 @@ yargs
         watch()
       },
     })
-  .demandCommand()
-  .parse(process.argv.slice(2))
+    .demandCommand()
+    .parse(process.argv.slice(2))
 }
 /*
 async function main() {
