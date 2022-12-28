@@ -4,9 +4,9 @@
 // only the log can be split, the buffer writer must be shared
 // not clear there is enough value to justify the overhead of splitting the log
 
-export * from './data'
+export * from '../../weblike/data'
 
-import { Fs } from './data'
+import { Fs } from '../../weblike/data'
 import { idbExists, useIdbFs } from './idbclient'
 import { useOpfs } from './opfsclient'
 

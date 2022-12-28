@@ -1,4 +1,4 @@
-import { Fs, Op, Req } from "./data"
+import { Fs, Op, Req } from "../../weblike/data"
 import idb from 'idb'
 
 // https://stackoverflow.com/questions/17468963/check-if-indexeddb-database-exists

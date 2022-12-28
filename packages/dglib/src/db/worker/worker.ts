@@ -2,9 +2,9 @@
 import { Key } from "../data"
 import { Rpc, sharedWorker, worker } from "../../thread/worker_rpc"
 import { Client } from "./dbw"
-import { LogRecord, Txx } from "../worker/data"
-import { MemDb } from "../worker/data"
-import { useFs } from "../fs"
+import { LogRecord, Txx } from "./data"
+import { MemDb } from "./data"
+import { useFs } from "../web/fs"
 
 
 // this should be easy to delegate to from an app shared worker

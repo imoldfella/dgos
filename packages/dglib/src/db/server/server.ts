@@ -1,5 +1,5 @@
 import { Dbms, Lsn, Query, Statement, Tx } from "../data";
-import { Fs, readJson, useFs } from "../fs";
+import { Fs, readJson, useFs } from "../web/fs";
 // import { Checkpoint, fileSet, FileSet, LogRecord, Lsn, MemDb, RootRecord, StartState, Txn, TxStatus, TxStatusType, Txx } from "../worker/data"
 import { LogState } from "../worker/log_writer"
 import { Checkpoint, LogRecord, Txn, TxStatusType, Txx } from "./data";
@@ -140,16 +140,8 @@ async function recover(fs: Fs) {
     })
 }
 
-export async function createDbms(opt?: Options) {
-    const pages = opt?.pages ?? 16 * 1024
+export async function createDbms2(fs: Fs,opt?: Options) {
 
-    const mem = new WebAssembly.Memory({
-        initial: pages, // 64K *64K = 4GB
-        maximum: pages,
-        shared: true
-    })
-
-    const fs = await useFs(mem.buffer)
     const fh = await fs.getFiles()
     if (fh.length) recover(fs)
     else {

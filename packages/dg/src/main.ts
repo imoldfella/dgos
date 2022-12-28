@@ -1,15 +1,110 @@
-import { compile } from './compile'
 import * as ts from "typescript";
 import tsvfs from '@typescript/vfs'
 import fs from 'fs'
 import { TextDecoder } from 'util';
+import * as yargs from 'yargs'
+import WebSocket from 'ws'
+import repl from 'repl'
+import { createDbms } from '../../dglib/src/db/webnot'
+
+const version = "0.0.1"
+
+// set up as websockets, easier to debug than a sharedworker, let's see.
+async function server() {
+  const svr = createDbms()
+  console.log(`dg server ${version},${process.version}`)
+  const wss = new WebSocket.Server({ port: 8080 });
+ 
+  wss.on('connection',  (ws) => {
+    ws.on('message', function incoming(message) {
+      console.log('received: %s', message);
+    });
+  
+    ws.send('something');
+  });
+}
+
+async function client() {
+  console.log(`dg client ${version},${process.version}`)
+  repl.start("dg>")
+}
+
+async function compile() {
+  console.log(`dg compiler ${version},${process.version}`)
+}
+async function watch() {
+  console.log(`dg watch ${version},${process.version}`)
+}
+
+async function main() {
+yargs
+  .scriptName('dg')
+  .usage("$0 command")
+  .version(version)
+  .command({
+    command: 'compile schema.ts ...',
+    aliases: ['c'],
+    describe: 'compile database schemas',
+    handler: async parsed => {
+      await compile()
+    },
+  })
+  .command({
+      command: 'server',
+      aliases: ['s'],
+      describe: 'datagrove server',
+      handler: async  parsed => {
+        await server()
+      },
+    })
+    .command({
+      command: 'client',
+      aliases: ['s'],
+      describe: 'datagrove client',
+      handler: async parsed => {
+        await client()
+      },
+    })
+  .command({
+      command: 'watch',
+      aliases: ['w'],
+      describe: 'watch mode',
+      handler: async parsed => {
+        watch()
+      },
+    })
+  .demandCommand()
+  .parse(process.argv.slice(2))
+}
+/*
+async function main() {
+  let args = yargs
+    .command([
+      c1,
+      c2,
+    ])
+
+    .option('input', {
+        alias: 'i',
+        demand: true
+    })
+    .option('year', {
+        alias: 'y',
+        description: "Year number",
+        demand: true
+    }).argv;
+  console.log(JSON.stringify(args));
+}
+*/
+main()
+// the cli version of the server will use websockets and 
 
 function ex() {
   const fsMap = tsvfs.createDefaultMapFromNodeModules({ target: ts.ScriptTarget.ES2015 })
   fsMap.set('index.ts', 'console.log("Hello World")')
 }
 
-function main() {
+function main2() {
 
   const filename = "test.ts";
   const codeb = fs.readFileSync('./simple.tsx')
@@ -104,4 +199,4 @@ function xx() {
 
   printRecursiveFrom(sourceFile!, 0, sourceFile!);
 }
-xx()
+

@@ -2,7 +2,7 @@
 
 // a set of SPSC's using atomics that acts as a MPSC with no shared-write cache lines  
 
-import { Mem } from "../../thread/mem"
+import { Mem } from "../../../thread/mem"
 
 // a limitation of Atomics.wait approach is that while we are sync-sleeping we can't respond to postmessage. a simpler approach that would still allow postmessage is to use async sleep against all the worker tail pointers, not in safari or firefox though
 

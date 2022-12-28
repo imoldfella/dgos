@@ -1,5 +1,5 @@
-import { Mem } from '../../thread/mem'
-import { newReq, Op, Req } from './data'
+import { Mem } from '../../../thread/mem'
+import { newReq, Op, Req } from '../../weblike/data'
 
 // maybe should inline this worker, its short and it probably needs to load to see if it can work?
 // not clear if navigator in the main util will offer the method to check.

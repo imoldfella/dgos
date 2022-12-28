@@ -1,5 +1,7 @@
 
-#
+only import this if you want the whole database
+use dbclient if you are a client
+
 
 branches can just be numbers on servers, which improves anonymity.
 23@s1.froov.net

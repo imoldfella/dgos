@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { createDbms } from '../dglib/db/server/server';
+import { createDbms } from '../../../dglib/src/db/server/server';
 
 test('', async() => {
     const dbms = await createDbms();

@@ -1,5 +1,5 @@
 import { Dbms, Query, Statement, Tx } from "../data";
-import { Fs, useFs } from "../fs";
+import { Fs, useFs } from "../web/fs";
 
 
 export class TxSvr implements Tx {

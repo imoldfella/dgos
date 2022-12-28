@@ -1,6 +1,6 @@
 
-import { RpcClient, worker } from "../../thread/worker_rpc"
-import { Fs, Op } from "./data"
+import { RpcClient, worker } from "../../../thread/worker_rpc"
+import { Fs, Op } from "../../weblike/data"
 
 
 export class Opfs extends Fs {

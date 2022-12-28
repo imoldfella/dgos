@@ -1,5 +1,5 @@
 /* @jsxImportSource solid-js */
-import { TextPart, emptyText, emptySheet, emptyPresent, where, index, limit, sort as order, primary, insert, update, remove, merge, drop, Schema, outer, SchemaObject, lateral, dictionary, sys as base } from '../../dgos/src/dglib/db'
+import { TextPart, emptyText, emptySheet, emptyPresent, where, index, limit, sort as order, primary, insert, update, remove, merge, drop, Schema, outer, SchemaObject, lateral, dictionary, sys as base } from '../../dglib/src/db'
 
 // define tables
 const artists = {
