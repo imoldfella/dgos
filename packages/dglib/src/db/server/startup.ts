@@ -1,7 +1,5 @@
-import { Dbms, Lsn, Query, Statement, Tx } from "../data";
-import { Fs, readJson, useFs } from "../web/fs";
-// import { Checkpoint, fileSet, FileSet, LogRecord, Lsn, MemDb, RootRecord, StartState, Txn, TxStatus, TxStatusType, Txx } from "../worker/data"
-import { LogState } from "../worker/log_writer"
+import { Lsn } from "../data";
+import { Fs, WorkerLike } from "../weblike";
 import { Checkpoint, LogRecord, Txn, TxStatusType, Txx } from "./data";
 import { DbmsSvr } from "./dbms";
 
@@ -12,7 +10,7 @@ export type StartState = {
     active: number
 }
 
-const checkpointFile = 0
+const checkpointFile = 0 // aka "master record"
 const logFile = 1
 const dataFile = 2
 
@@ -49,8 +47,8 @@ export interface Options {
 
 // pull this out so we can test from a crash state. (fake-idb always starts empty)
 
-async function recover(fs: Fs) {
-    const checkpoint = (await fs.atomicRead(0))?.checkpoint ?? 0
+async function recover(fs: Fs, checkpoint: number) {
+
     // start with newest (completed) checkpoint, then read to the end of the log
     // otherwise it is in the newest log file
     const lr = new LogReader(fs, logFile)
@@ -140,17 +138,20 @@ async function recover(fs: Fs) {
     })
 }
 
-export async function createDbms2(fs: Fs,opt?: Options) {
-
-    const fh = await fs.getFiles()
-    if (fh.length) recover(fs)
-    else {
-        // create an initial checkpoint, empty log, empty data
-
+// maybe we should inject a kind of webassembly loader?
+// we can have many of these modules sharing the same memory.
+export async function createDbms2(mem: WebAssembly.Memory, worker: WorkerLike[], wasmfunc: any, fs: Fs, opt?: Options): Promise<DbmsSvr> {
+    const fd = await fs.readFile(checkpointFile)
+    if (fd) {
+        const checkpoint = JSON.parse(fd)
+        recover(fs, checkpoint)
+    } else {
+        // create an initial empty checkpoint, empty log, empty data
+        fs.atomicWrite(checkpointFile, JSON.stringify({
+            checkpoint: 0
+        }))
     }
-
-    const r = new DbmsSvr(fs)
-    return r
+    return new DbmsSvr(fs)
 }
 
 
