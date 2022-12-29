@@ -6,18 +6,32 @@ import * as yargs from 'yargs'
 import WebSocket from 'ws'
 import repl from 'repl'
 import { createDbms } from '../../dglib/src/db/webnot'
+import { PortLike } from "../../dglib/src/db/weblike";
 
 const version = "0.0.1"
 
+class WsPortLike implements PortLike {
+  constructor(public ws: WebSocket){
+
+  }
+  postMessage(message: any): void {
+    throw new Error("Method not implemented.");
+  }
+
+}
 // set up as websockets, easier to debug than a sharedworker, let's see.
 async function server() {
-  const svr = createDbms()
+  const svr = await createDbms()
   console.log(`dg server ${version},${process.version}`)
   const wss = new WebSocket.Server({ port: 8080 });
 
   wss.on('connection', (ws) => {
+    const pl = new WsPortLike(ws)
+    svr.connect(pl)
     ws.on('message', function incoming(message) {
-      console.log('received: %s', message);
+      // if we are allowing structured data elsewhere, we need to do something here
+      // note we at least need to pack to servers.
+      svr.recv(pl,message)
     });
 
     ws.send('something');

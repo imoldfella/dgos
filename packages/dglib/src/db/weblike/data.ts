@@ -23,3 +23,11 @@ export interface WorkerLike {
     on(message: string, fn: (e: any) => void): void
     postMessage(message: any): void
 }
+
+// server tracks this
+
+// is cbor faster than structured cloning? hard to imagine.
+// but can I pack arbitrary things?
+export interface PortLike {
+    postMessage(message: any): void 
+}
