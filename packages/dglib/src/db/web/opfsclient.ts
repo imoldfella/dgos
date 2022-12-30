@@ -1,6 +1,5 @@
 
-import { RpcClient, worker } from "../../../thread/worker_rpc"
-import { Fs } from "../../weblike"
+import { Fs } from "../weblike"
 import { Req } from "./opfs"
 
 

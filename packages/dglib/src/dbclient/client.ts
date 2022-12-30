@@ -1,4 +1,9 @@
-import { Dbms, Query, Statement, Tx , Schema} from "../data"
+import { Schema, Tx } from "../db"
+import { Dbms, Query, Statement } from "../db/data"
+
+// mostly we want to use insert, merge/upsert, delete, splice that are generated from tables with the compiler
+// these must be compiled and run through a query optimizer. For every transaction statement there is a query against the 
+
 
 
 // should we use comlink to wrap the shared worker? that way the user can easily create their own shared worker that includes datagrove.
@@ -38,7 +43,7 @@ export interface Options {
 }
 
 // procs is an object used to create wrappers for "server side" procedures in your shared worker
-export class Db implements Dbms {
+export class Db {
 
     // there is a global time for the database and a local time for this device.
 

@@ -26,11 +26,14 @@ export class StatementSvr<P, T> implements Statement<P, T>  {
     }
 }
 
-
+// for cases like world maps, we split the tiles into groups
+export class ServerSyncState {
+    // 
+}
 // the sql compiler needs to be an optional module, its like to be large.
 // https://github.com/diamondio/better-queue
 export class DbmsSvr implements Dbms {
-    server = new Set<Server>()
+    server = new Map<ServerPipe, ServerSyncState>()
 
     // priority queue?
     chunksWanted: string[] = []
@@ -51,7 +54,7 @@ export class DbmsSvr implements Dbms {
 
     // we need to keep a list in the database of chunks that we want to obtain.
     // this is subject to change.
-    constructor(public fs: Fs){
+    constructor(public fs: Fs) {
     }
 
     async query<P, T>(stmt: Statement<P, T>, props: T): Promise<Query<T>> {
@@ -78,32 +81,33 @@ export class DbmsSvr implements Dbms {
     recv(p: PortLike, msg: any) {
 
     }
-    recvServer(s: Server, d: any) {
+    recvServer(s: ServerPipe, d: any) {
 
     }
 }
+
 
 
 // in future allow webrtc endpoints.
 // there is one for each dns/origin.
 // these may proxy a mobile native server.
-interface  Server {
-    tryConnect() : void
+interface ServerPipe {
+    tryConnect(): void
 }
 
 // each server may be responsible for multiple hosts, each host may be responsible for multiple databases. the only we care about is the database though, and within that the length of the group log is the important thing. length is in batches, 
-export class WsServer implements Server {
+export class WsServer implements ServerPipe {
     online: boolean = false
     ws?: WebSocket  // null is disconnected
 
     // we need some kind of active query to know what groups we should be downloading the length of.
 
-    constructor(public dbms: DbmsSvr, public url: string){
+    constructor(public dbms: DbmsSvr, public url: string) {
         this.tryConnect()
     }
 
     async setStatus(s: boolean) {
-        if (this.online == s) return 
+        if (this.online == s) return
         // update a table in the database to note our status has changed.
         this.online = s
         if (s) {
@@ -113,22 +117,22 @@ export class WsServer implements Server {
             this.ws?.close()
             this.ws = undefined
         }
-    }    
+    }
 
-    async tryConnect()  {
+    async tryConnect() {
         this.ws?.close()
         this.ws = new WebSocket(this.url)
         this.ws.onopen = () => {
-           this.setStatus(true)
+            this.setStatus(true)
         }
-        this.ws.onmessage=(e: MessageEvent) =>{
-            this.dbms.recvServer(this,e.data)
+        this.ws.onmessage = (e: MessageEvent) => {
+            this.dbms.recvServer(this, e.data)
         }
-        this.ws.onerror=()=>{
+        this.ws.onerror = () => {
             this.setStatus(false)
             this.ws = undefined
         }
-        this.ws.onclose=()=>{
+        this.ws.onclose = () => {
             this.setStatus(false)
             this.ws = undefined
         }
