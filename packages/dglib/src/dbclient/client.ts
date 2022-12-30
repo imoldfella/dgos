@@ -4,6 +4,23 @@ import { Dbms, Query, Statement } from "../db/data"
 // mostly we want to use insert, merge/upsert, delete, splice that are generated from tables with the compiler
 // these must be compiled and run through a query optimizer. For every transaction statement there is a query against the 
 
+// the compiler will generate slightly different code for react compared to solid.
+// both will include code from here.
+
+// each query will grab the provider
+// login is managed by dgos
+
+// <Datagrove server='www.datagrove.com'>{app}</Datagrove>
+//   <App> </App>
+// </Datagrove>
+
+// generate with compiler:
+// const d = createSomeQuery() // uses provider
+
+//
+// <s>
+//  
+
 
 
 // should we use comlink to wrap the shared worker? that way the user can easily create their own shared worker that includes datagrove.

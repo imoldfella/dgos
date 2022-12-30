@@ -140,7 +140,8 @@ async function recover(fs: Fs, checkpoint: number) {
 
 // maybe we should inject a kind of webassembly loader?
 // we can have many of these modules sharing the same memory.
-export async function createDbms2(mem: WebAssembly.Memory, worker: WorkerLike[], wasmfunc: any, fs: Fs, opt?: Options): Promise<DbmsSvr> {
+export async function createDbms2(url: string,mem: WebAssembly.Memory, worker: WorkerLike[], wasmfunc: any, fs: Fs, opt?: Options): Promise<DbmsSvr> {
+    if (false) {
     const fd = await fs.readFile(checkpointFile)
     if (fd) {
         const checkpoint = JSON.parse(fd)
@@ -151,7 +152,8 @@ export async function createDbms2(mem: WebAssembly.Memory, worker: WorkerLike[],
             checkpoint: 0
         }))
     }
-    return new DbmsSvr(fs)
+}
+    return new DbmsSvr(url, fs)
 }
 
 

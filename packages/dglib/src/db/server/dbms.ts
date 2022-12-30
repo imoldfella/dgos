@@ -1,6 +1,22 @@
-import { Dbms, Query, Statement, Tx } from "../data";
-import { Fs, PortLike } from "../weblike";
+import { Dbms, Query, Statement, Tx } from "../data"
+import { Fs, PortLike } from "../weblike"
+import { z } from "zod"
 
+// 
+const FormData = z.object({
+    firstName: z.string().min(1).max(18),
+    lastName: z.string().min(1).max(18),
+    phone: z.string().min(10).max(14).optional(),
+    email: z.string().email(),
+    url: z.string().url().optional(),
+});
+type FormData2 = z.infer<typeof FormData>
+
+async function commitForm(x: FormData2) {
+    return {
+        welcome: x.firstName
+    }
+}
 
 export class TxSvr implements Tx {
     async commit(): Promise<boolean> {
@@ -30,10 +46,59 @@ export class StatementSvr<P, T> implements Statement<P, T>  {
 export class ServerSyncState {
     // 
 }
+
+// 
+
+
 // the sql compiler needs to be an optional module, its like to be large.
 // https://github.com/diamondio/better-queue
 export class DbmsSvr implements Dbms {
-    server = new Map<ServerPipe, ServerSyncState>()
+        // we need to keep a list in the database of chunks that we want to obtain.
+    // this is subject to change.
+    constructor(public url: string, public fs: Fs) {
+        this.proc.set('commitForm', [ FormData, commitForm])
+        console.log("server running")
+    }
+
+
+    proc = new Map<string, [z.ZodObject<any>,  (params: any) => Promise<any>]>()
+
+    online: boolean = false
+    ws?: WebSocket  // null is disconnected
+
+    // we need some kind of active query to know what groups we should be downloading the length of.
+    async setStatus(s: boolean) {
+        if (this.online == s) return
+        // update a table in the database to note our status has changed.
+        this.online = s
+        if (s) {
+            // when we first connect we need to remind the server of the groups we are listening to
+
+        } else {
+            this.ws?.close()
+            this.ws = undefined
+        }
+    }
+
+    async tryConnect() {
+        this.ws?.close()
+        // browser and ShardWorker is not compatible, we need some wrapper
+        this.ws = new WebSocket(this.url)
+        this.ws.onopen = () => {
+            this.setStatus(true)
+        }
+        this.ws.onmessage = (e: MessageEvent) => {
+            this.recvServer(e.data)
+        }
+        this.ws.onerror = () => {
+            this.setStatus(false)
+            this.ws = undefined
+        }
+        this.ws.onclose = () => {
+            this.setStatus(false)
+            this.ws = undefined
+        }
+    }
 
     // priority queue?
     chunksWanted: string[] = []
@@ -52,10 +117,6 @@ export class DbmsSvr implements Dbms {
         this.pullCount--
     }
 
-    // we need to keep a list in the database of chunks that we want to obtain.
-    // this is subject to change.
-    constructor(public fs: Fs) {
-    }
 
     async query<P, T>(stmt: Statement<P, T>, props: T): Promise<Query<T>> {
         return new QuerySvr()
@@ -74,67 +135,39 @@ export class DbmsSvr implements Dbms {
 
     // the shared worker will connect users with something like MessagePort
     connect(p: PortLike) {
+        console.log("client connected")
     }
     disconnect(p: PortLike) {
-
+        console.log("client disconnected")
+        // clean up subscriptions
     }
-    recv(p: PortLike, msg: any) {
-
+    async commit(p: PortLike, msg: any) {
+        const { id, params } = msg
+        try {
+            const fnd = this.proc.get(msg.method)
+            if (fnd && fnd[0].safeParse(params).success) {
+                return { id: id, result:  await fnd[1](params) }
+            
+            } else {
+                throw `bad ${msg.method}`
+            }
+        } catch (e: any) {
+            return { id: id, error: e.toString() }
+        }
     }
-    recvServer(s: ServerPipe, d: any) {
+    recvServer( d: any) {
 
     }
 }
 
-
-
-// in future allow webrtc endpoints.
-// there is one for each dns/origin.
-// these may proxy a mobile native server.
-interface ServerPipe {
-    tryConnect(): void
+// pass encoded as cbor
+// 
+interface TxData {
+    method: string,
+    id: number,
+    params: any
 }
 
-// each server may be responsible for multiple hosts, each host may be responsible for multiple databases. the only we care about is the database though, and within that the length of the group log is the important thing. length is in batches, 
-export class WsServer implements ServerPipe {
-    online: boolean = false
-    ws?: WebSocket  // null is disconnected
 
-    // we need some kind of active query to know what groups we should be downloading the length of.
 
-    constructor(public dbms: DbmsSvr, public url: string) {
-        this.tryConnect()
-    }
 
-    async setStatus(s: boolean) {
-        if (this.online == s) return
-        // update a table in the database to note our status has changed.
-        this.online = s
-        if (s) {
-            // when we first connect we need to remind the server of the groups we are listening to
-
-        } else {
-            this.ws?.close()
-            this.ws = undefined
-        }
-    }
-
-    async tryConnect() {
-        this.ws?.close()
-        this.ws = new WebSocket(this.url)
-        this.ws.onopen = () => {
-            this.setStatus(true)
-        }
-        this.ws.onmessage = (e: MessageEvent) => {
-            this.dbms.recvServer(this, e.data)
-        }
-        this.ws.onerror = () => {
-            this.setStatus(false)
-            this.ws = undefined
-        }
-        this.ws.onclose = () => {
-            this.setStatus(false)
-            this.ws = undefined
-        }
-    }
-}

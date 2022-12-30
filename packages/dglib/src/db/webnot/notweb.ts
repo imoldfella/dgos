@@ -5,7 +5,8 @@ import { Worker } from 'worker_threads'
 
 // I'd like to generate my own webassembly for the workers 
 // attaching this code to the pre-existing shared webassembly might take some care?
-export async function createDbms(opt?: any) {
+export async function createDbms(host: string, opt?: any) {
+    
     const pages = opt?.pages ?? 16 * 1024
     const nthread = opt?.nthread ?? 4
 
@@ -17,25 +18,28 @@ export async function createDbms(opt?: any) {
 
     // workers are slightly different in node, start them here and give them to dbms.
     // we might need slight different workers as well
-    const w: Worker[] = []
-    for (let i = 0; i < nthread; i++) {
-        w.push(new Worker('./worker.mjs'))
-    }
+    const w: Worker[] = []   
+    let wasmfunc = {}
+    if (false) {
+        for (let i = 0; i < nthread; i++) {
+            w.push(new Worker('./worker.mjs'))
+        }
 
-    const wasmBytes = await fs.readFile("somepath.wasm")
-    const wasmfunc = await WebAssembly.instantiate(wasmBytes, {
-        // import the memory
-        js: { mem }
-    })
+        const wasmBytes = await fs.readFile("somepath.wasm")
+        wasmfunc = await WebAssembly.instantiate(wasmBytes, {
+            // import the memory
+            js: { mem }
+        })
+    }
     // wasmfunc.square(50)
-    return createDbms2(mem, w, wasmfunc, new Nodefs(), opt)
+    return createDbms2(host, mem, w, wasmfunc, new Nodefs(), opt)
 }
 
 export class Nodefs extends Fs {
+    fh = new Map<number, fs.FileHandle>()
     flush(h: number): Promise<void> {
         throw new Error('Method not implemented.')
     }
-    fh = new Map<number, fs.FileHandle>()
     async handle(n: number) {
         let h = this.fh.get(n)
         if (!h) {
