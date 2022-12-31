@@ -92,7 +92,7 @@ export class DbmsSvr {
     }
     // background sync service, called after connecting to the host
     async start() {
-        // I need to send 
+        // I need to send a list of attestations and 
         await this.ask('subscribe', [])
     }
 

@@ -84,3 +84,6 @@ export type Checkpoint = {
     dirty: PageId[]
     recLsn: Lsn[] // for each tx, we want the earliest record we need to scan.
 }
+
+
+export z.

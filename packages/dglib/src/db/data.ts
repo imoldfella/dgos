@@ -4,6 +4,8 @@
 // ever rid would then point to immutable thing.
 // Uint8Array's can't be keys, so would need to hex them.
 
+import { z } from "zod"
+
 // tradeoff of whether to map a log to a partition: more concurrency = potentially bigger lock problem
 export interface Dbms {
     begin(): Promise<Tx>
@@ -205,3 +207,17 @@ export interface Store {
 
 
 }
+
+export const AttestSubscribez = z.object({
+    covers: z.string(),
+    params: z.any(),
+    validFrom: z.string(),
+    validTo: z.string() 
+})
+type AttestSubscribe = z.infer<typeof AttestSubscribez>
+
+export const Subscribez = z.object({
+    attestation: z.array(AttestSubscribez),
+    lastSeen: z.array(z.bigint())
+})
+type Subscribe = z.infer<typeof Subscribez>
