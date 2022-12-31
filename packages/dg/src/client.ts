@@ -45,8 +45,9 @@ export class Client {
   }
 }
 
-export async function client(url: string, query: string, mutation: string) {
-  const cl = new Client(process.env.identity ?? "")
+export async function commit(tx: string) {
+  const cl = new Client(process.env.IDENTITY ?? "")
+  const url = process.env.HOST ?? "www.froov.net"
   console.log(`dg client ${version},${process.version}`)
   const ws = new WebSocket(url)
   ws.send(cl.identity)
@@ -65,7 +66,7 @@ export async function client(url: string, query: string, mutation: string) {
   }
   ws.on('message', (e, isBinary) => {
     console.log(decode(combine(e)))
-    if (!query) {
+    if (!tx) {
       process.exit(0)
     }
   })

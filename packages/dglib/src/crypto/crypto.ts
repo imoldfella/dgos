@@ -1,10 +1,8 @@
-import bip39 from 'bip39'
+import { generateMnemonic, mnemonicToSeed } from 'bip39'
 import { pki, random } from "node-forge"
 import * as secp from '@noble/secp256k1'
 import { encode, decode } from 'cbor-x'
 import z from 'zod'
-
-
 
 export function getRandom(): number {
     const r = new BigUint64Array(1)
@@ -12,11 +10,18 @@ export function getRandom(): number {
     return Number(r[0])
 }
 
+export const Chainz = z.object({
+    signer: z.instanceof(Uint8Array),
+    signature: z.instanceof(Uint8Array),
+    expires: z.string().optional(),
+    nogrant: z.boolean().optional()
+})
+export type Chain = z.infer<typeof Chainz>
+
 export const Identityz = z.object({
     public: z.instanceof(Uint8Array),
     private: z.instanceof(Uint8Array).optional(),
-    signer: z.instanceof(Uint8Array),
-    signature: z.instanceof(Uint8Array)
+    chain: z.array(Chainz)
 })
 export type Identity = z.infer<typeof Identityz>
 
@@ -36,7 +41,7 @@ export function loadCbor(s: string) {
 // const { privateKey, publicKey } = pki.rsa.generateKeyPair({ bits: 4096, prng, workers: 2 })
 
 export async function identityFromBip39(s: string): Promise<Identity> {
-    const privKey = (await bip39.mnemonicToSeed(s)) //.toString('hex')
+    const privKey = await secp.utils.sha256((new TextEncoder).encode(s)) //.toString('hex')
     const pubKey = secp.getPublicKey(privKey, true)
     const prng = random.createInstance()
 
@@ -48,13 +53,17 @@ export async function identityFromBip39(s: string): Promise<Identity> {
     return {
         public: pubKey,
         private: privKey,
-        signer: pubKey,
-        signature: sig,
+        chain: [{
+            signer: pubKey,
+            signature: sig,
+        }]
+
     }
 
 }
 
-export async function deviceKey(i: Identity) {
+// 
+export async function createDeviceKey(i: Identity) {
     const privKey = secp.utils.randomPrivateKey()
     const pubKey = secp.getPublicKey(privKey, true)
     const msgHash = await secp.utils.sha256(pubKey)
@@ -69,9 +78,6 @@ export async function deviceKey(i: Identity) {
 }
 
 export function createKey() {
-    return bip39.generateMnemonic()
+    return generateMnemonic()
 }
 
-export function validateKey(s: string) {
-    return bip39.validateMnemonic(s)
-}

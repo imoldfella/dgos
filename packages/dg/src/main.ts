@@ -9,9 +9,10 @@ import { createDbms } from '../../dglib/src/db/webnot'
 import { PortLike } from "../../dglib/src/db/weblike";
 import { decode, encode } from 'cbor-x';
 import { combine } from "./nodebuffer";
-import { client, clientrepl } from "./client";
+import { commit, clientrepl } from "./client";
 import { version } from "./data";
 import dotenv from 'dotenv'
+import { createKey, createDeviceKey, identityFromBip39, storeCbor, loadCbor } from '../../dglib/src/crypto'
 
 // each websocket port is like a tab on our shared worker
 class WsPortLike implements PortLike {
@@ -96,19 +97,17 @@ async function main() {
       },
     })
     .command({
-      command: 'client',
+      command: 'commit',
       aliases: ['s'],
       describe: 'datagrove client',
       builder: (yargs) => {
         return yargs
-          .option('commit', {
-            default: ""
-          }).option('url', { default: "ws:localhost:8080" })
-          .option('query', { default: "" })
-          .option('sub', { default: "" })
+          .positional('commit', {
+            default: "", type: 'string', demandOption: true
+          })
       },
       handler: async parsed => {
-        await client(parsed.url as string, parsed.query as string, parsed.commit as string)
+        await commit(parsed.commit)
       },
     })
     .command({
@@ -119,8 +118,37 @@ async function main() {
         watch()
       },
     })
+    .command({
+      command: 'identity',
+      describe: 'create a new identity and a device key',
+      handler: async parsed => {
+        createIdentity()
+      },
+    })
+    .command({
+      command: 'device',
+      describe: 'create a device key',
+      builder: (yargs) => {
+        return yargs
+          .option('phrase', { type: 'string', demandOption: true })
+      },
+      handler: async parsed => {
+        createDevice(parsed.phrase)
+      },
+    })
     .demandCommand()
     .parse(process.argv.slice(2))
+}
+async function createIdentity() {
+  const key = createKey()
+  console.log("BIP39=", key)
+  const id = await identityFromBip39(key)
+  console.log("IDENTITY=", storeCbor(await createDeviceKey(id)))
+  process.exit()
+}
+function createDevice(idstr: string) {
+  const id = loadCbor(idstr)
+  console.log("IDENTITY=", storeCbor(createDeviceKey(id)))
 }
 /*
 async function main() {
