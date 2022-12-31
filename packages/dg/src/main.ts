@@ -3,7 +3,7 @@ import tsvfs from '@typescript/vfs'
 import fs from 'fs'
 import { TextDecoder } from 'util';
 import * as yargs from 'yargs'
-import WebSocket,{WebSocketServer} from 'ws'
+import WebSocket, { WebSocketServer } from 'ws'
 import repl from 'repl'
 import { createDbms } from '../../dglib/src/db/webnot'
 import { PortLike } from "../../dglib/src/db/weblike";
@@ -11,37 +11,45 @@ import { decode, encode } from 'cbor-x';
 import { combine } from "./nodebuffer";
 import { client, clientrepl } from "./client";
 import { version } from "./data";
-
-
+import dotenv from 'dotenv'
 
 // each websocket port is like a tab on our shared worker
 class WsPortLike implements PortLike {
-  constructor(public ws: WebSocket){}
+  constructor(public ws: WebSocket) { }
   postMessage(message: any): void {
-    this.ws.send(message, {binary: true})
+    this.ws.send(message, { binary: true })
   }
 }
 
 
 // set up as websockets, easier to debug than a sharedworker, let's see.
 // a client will send transactions to the shared worker using structured cloning, so we can use cbor here as a proxy? (supports binary)
-async function server(port: number,host: string) {
+async function server(port: number, host: string) {
   const svr = await createDbms(host)
   console.log(`dg server ${version},${process.version},${port}`)
   const wss = new WebSocketServer({ port: port });
 
-  wss.on('connection', (ws) => {
-    const pl = new WsPortLike(ws)
-    svr.connect(pl)  // the server will send unprompted updates to queries. 
-    ws.on('close', ()=>svr.disconnect(pl))
-    // quirky nodejs approach, why not onmessage?
-    ws.on('message', async (message,isBinary) =>{
+  const cn = (pl: WsPortLike) => {
+    pl.ws.on('message', async (message, isBinary) => {
       const o = decode(combine(message))
       console.log('rcv', o)
-      const r = await svr.commit(pl,o)
+      const r = await svr.commit(pl, o)
       console.log('snd', r)
-      ws.send(encode(r))
+      pl.ws.send(encode(r))
     });
+  }
+  wss.on('connection', (ws) => {
+    const pl = new WsPortLike(ws)
+    ws.once('message', (message) => {
+      if (svr.connect(pl, decode(combine(message)))) {
+        cn(pl)
+      } else {
+        ws.close()
+      }
+    }) // the server will send unprompted updates to queries. 
+    ws.on('close', () => svr.disconnect(pl))
+    // quirky nodejs approach, why not onmessage?
+
   });
 }
 
@@ -55,6 +63,7 @@ async function watch() {
 }
 
 async function main() {
+  dotenv.config()
   yargs
     .scriptName('dg')
     .usage("$0 command")
@@ -71,8 +80,8 @@ async function main() {
       command: 'server',
       aliases: ['s'],
       describe: 'datagrove server',
-      builder: (yargs)=>{
-        return yargs.option("port",{ default: 8080})
+      builder: (yargs) => {
+        return yargs.option("port", { default: 8080 })
       },
       handler: async parsed => {
         await server(parsed.port, "www.datagrove.com")
@@ -92,13 +101,14 @@ async function main() {
       describe: 'datagrove client',
       builder: (yargs) => {
         return yargs
-        .option('commit', {
-          default: ""
-        }).option('url',{default: "ws:localhost:8080"})
-        .option('query',{default: ""})
+          .option('commit', {
+            default: ""
+          }).option('url', { default: "ws:localhost:8080" })
+          .option('query', { default: "" })
+          .option('sub', { default: "" })
       },
       handler: async parsed => {
-        await client(parsed.url as string,parsed.query as string,parsed.commit as string)
+        await client(parsed.url as string, parsed.query as string, parsed.commit as string)
       },
     })
     .command({

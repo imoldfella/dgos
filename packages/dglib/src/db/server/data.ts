@@ -1,4 +1,22 @@
+// let the client define general triggers?
+export interface RangeDelta<T> {
+    added: T[]
+    deleted: T[]
+    // indicates which attributes were changed
+    updated: number[][]
+}
 
+// a type of combined triggered procedure
+// select, project, filter
+export interface ObserveRange {
+    begin: Uint8Array
+    end: Uint8Array
+    startPosition: number,
+    endPosition: number,
+    startVersion: number
+    id: number
+    change: (delta: RangeDelta<any>) => void
+}
 export enum Txx {
     begin = 0,
     commit = 1,

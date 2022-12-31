@@ -1,7 +1,7 @@
 import { Lsn } from "../data";
 import { Fs, WorkerLike } from "../weblike";
 import { Checkpoint, LogRecord, Txn, TxStatusType, Txx } from "./data";
-import { DbmsSvr } from "./dbms";
+import { DbmsSvr, Platform } from "./dbms";
 
 export type StartState = {
     mem: ArrayBuffer
@@ -138,28 +138,24 @@ async function recover(fs: Fs, checkpoint: number) {
     })
 }
 
-// maybe we should inject a kind of webassembly loader?
-// we can have many of these modules sharing the same memory.
-export async function createDbms2(url: string,mem: WebAssembly.Memory, worker: WorkerLike[], wasmfunc: any, fs: Fs, opt?: Options): Promise<DbmsSvr> {
-    if (false) {
-    const fd = await fs.readFile(checkpointFile)
-    if (fd) {
-        const checkpoint = JSON.parse(fd)
-        recover(fs, checkpoint)
-    } else {
-        // create an initial empty checkpoint, empty log, empty data
-        fs.atomicWrite(checkpointFile, JSON.stringify({
-            checkpoint: 0
-        }))
-    }
-}
-    return new DbmsSvr(url, fs)
-}
-
-
 
 // // this allows you use dbms directly without a sharedWorker
 // export async function testDb<T>(opt?: Options) {
 //     // note this your application's shared worker, but it should expose Datagrove methods for Db to work. 
 //     return  new Dbms()
 // } 
+export async function startup(d: DbmsSvr) {
+    const fd = await d.os.fs.readFile(checkpointFile)
+    if (fd) {
+        const checkpoint = JSON.parse(fd)
+        recover(d.os.fs, checkpoint)
+    } else {
+        // create an initial empty checkpoint, empty log, empty data
+        d.os.fs.atomicWrite(checkpointFile, JSON.stringify({
+            checkpoint: 0
+        }))
+    }
+    // here we should start trying to sync with thehost
+    d.start()
+    return d
+}
