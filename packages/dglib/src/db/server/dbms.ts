@@ -1,15 +1,14 @@
-import { Dbms, Identity, Query, Statement, Tx } from "../data"
+import { decode, encode } from "cbor-x";
+import { Identity } from "../../crypto";
 import { Fs, PortLike } from "../weblike"
 import { ObserveRange } from "./data";
 
-
-
+// to take advantage of zero round trip, we need to 
 export class Session {
     // we should immediately send a
     observeRange(r: ObserveRange) {
         this.closeRange(r.id)
         this.resource.set(r.id, r)
-
         // we need to create a start query and a trigger.
     }
     resource = new Map<number, ObserveRange>()
@@ -35,8 +34,10 @@ export interface wasmImports {
 
 }
 export interface Platform {
+    sendHost(arg0: any): void;
     url: string
     fs: Fs
+    identity: Identity
 }
 // the sql compiler needs to be an optional module, its like to be large.
 // https://github.com/diamondio/better-queue
@@ -67,16 +68,41 @@ export class DbmsSvr {
 
         this.pullCount--
     }
-    // background sync service, called after startup
-    async start() {
-
+    nextHostTag = 42
+    pend = new Map<number, (x: any) => void>()
+    async ask(method: string, params: any): Promise<any> {
+        const tag = this.nextHostTag++
+        return new Promise(resolve => {
+            const r = this.os.sendHost(encode({
+                method,
+                id: tag,
+                params
+            }))
+            this.pend.set(tag, resolve)
+        })
     }
 
-    // call when a client connects, 
-    connect(p: PortLike, identity: Identity) {
+    rcvHost(m: Uint8Array) {
+        const o = decode(m)
+        const r = this.pend.get(o.id)
+        if (r) {
+            r(o)
+            this.pend.delete(o.id)
+        }
+    }
+    // background sync service, called after connecting to the host
+    async start() {
+        // I need to send 
+        await this.ask('subscribe', [])
+    }
+
+    // call when a client connects, identity must be the first message
+    // if the identity is invalid we should disconnect.
+    // this identity must include the private key and a valid chain
+    // the shared worker must receive its identity from 
+    connect(p: PortLike) {
         this.client.set(p, new Session(p, this))
         console.log("client connected")
-        return true
     }
     // call when a client disconnects
     disconnect(p: PortLike) {
@@ -86,6 +112,9 @@ export class DbmsSvr {
         this.client.delete(p)
     }
 
+    // use any here to support structured cloning in shared worker
+    // we need to determine if this is faster or slower than cbor
+    // we might need to cbor in any event to push the transaction to webassembly?
     async commit(p: PortLike, msg: any) {
         const { method, id, params } = msg
         try {
@@ -111,7 +140,7 @@ export class DbmsSvr {
     }
 }
 
-
+// note that host is not needed here; the server only allows one host and its already initialized from the shared worker or .env. We still need the identity, because we may have multiple identities that connect to this? Or maybe we should start a new server for each identity. That won't work though because we would need a separate sharedworker, which is identified by the url? we could use the name in a dictionary
 
 
 /*

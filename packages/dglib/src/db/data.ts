@@ -52,9 +52,7 @@ export interface BranchUpdate {
     lsn: Lsn
     update: TableUpdate[]
 }
-export interface Identity {
-    secret: Uint8Array
-}
+
 // transactions need support for Pm, which means we need to fail/rebase
 // pm transactions can be singular? It would be better to not special case.
 export type Txd = {
@@ -81,10 +79,6 @@ export class BranchConcierge {
 }
 export class Table {
 
-}
-
-export interface Sandbox {
-    identity: Identity
 }
 
 

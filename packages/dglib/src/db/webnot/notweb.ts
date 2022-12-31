@@ -1,8 +1,11 @@
 import { startup } from '../server'
 import { DbmsSvr, Platform } from '../server/dbms';
-import { Fs } from "../weblike/data"
+import { Fs, PortLike } from "../weblike/data"
 import fs from 'fs/promises'
 import { Worker } from 'worker_threads'
+import { Identity, loadCbor } from '../../crypto';
+import { WebSocketServer, WebSocket } from 'ws';
+import { decode, encode } from 'cbor-x';
 
 
 export class NodePlatform implements Platform {
@@ -10,6 +13,9 @@ export class NodePlatform implements Platform {
     w: Worker[] = []
     online: boolean = false
     ws?: WebSocket  // null is disconnected
+
+    constructor(public identity: Identity, public url: string, public mem: WebAssembly.Memory) {
+    }
 
     // we need some kind of active query to know what groups we should be downloading the length of.
     async setStatus(s: boolean) {
@@ -24,16 +30,25 @@ export class NodePlatform implements Platform {
             this.ws = undefined
         }
     }
+
+    sendHost(x: Uint8Array) {
+        this.ws?.send(x)
+    }
+
+    // we should try to send our requests in the connect instead of waiting?
+    // how do we validate this isn't a replay? what if it is, does that matter?
+    // we could use a connection counter as the challenge. you can connect to anything greater than the previous connection.
     async tryConnect(rcv: (data: Uint8Array) => void) {
         this.ws?.close()
         // browser and ShardWorker is not compatible, we need some wrapper
+        // we need to 
         this.ws = new WebSocket(this.url)
         this.ws.onopen = () => {
             this.setStatus(true)
         }
-        this.ws.onmessage = (e: MessageEvent) => {
-            rcv(e.data)
-        }
+        this.ws.on('message', (e) => {
+            rcv(combine(e))
+        })
         this.ws.onerror = () => {
             this.setStatus(false)
             this.ws = undefined
@@ -43,16 +58,18 @@ export class NodePlatform implements Platform {
             this.ws = undefined
         }
     }
-    constructor(public url: string, public mem: WebAssembly.Memory) {
 
-    }
+
+
 }
+
 // I'd like to generate my own webassembly for the workers 
 // attaching this code to the pre-existing shared webassembly might take some care?
-export async function createDbms(host: string, opt?: any) {
+// this works from node and gets its configuration from environment, maybe eventually a config file?
+export async function createDbms() {
 
-    const pages = opt?.pages ?? 16 * 1024
-    const nthread = opt?.nthread ?? 4
+    const pages = 16 * 1024
+    const nthread = 0
 
     const mem = new WebAssembly.Memory({
         initial: pages, // 64K *64K = 4GB
@@ -77,10 +94,74 @@ export async function createDbms(host: string, opt?: any) {
         })
     }
     // wasmfunc.square(50)
-    const os = new NodePlatform(host, mem)
-    return startup(new DbmsSvr(os))
+    // for debug maybe we want datagrove.config.ts instead of .env?
+    const id = await loadCbor(process.env.IDENTITY ?? "")
+    const port = process.env.PORT ? parseInt(process.env.PORT) : 8080
+    const host = process.env.HOST ?? "example.com"
+
+    const os = new NodePlatform(id, host, mem)
+    const dbms = await startup(new DbmsSvr(os))
+
+
+    // we should set up a heart beat for the host
+    os.tryConnect(e=>{
+        dbms.rcvHost(e)
+    })
+
+    console.log(`dg server ${process.version},${port}`)
+    const wss = new WebSocketServer({ port: port });
+
+    wss.on('connection', (ws) => {
+        const pl = new WsPortLike(ws)
+        dbms.connect(pl)
+        pl.ws.on('message', async (message) => {
+            const o = decode(combine(message))
+            console.log('rcv', o)
+            const r = await dbms.commit(pl, o)
+            console.log('snd', r)
+            pl.ws.send(encode(r))
+        });
+        // the server will send unprompted updates to queries. 
+        ws.on('close', () => dbms.disconnect(pl))
+        // quirky nodejs approach, why not onmessage?
+    });
+}
+// each websocket port is like a tab on our shared worker
+class WsPortLike implements PortLike {
+    constructor(public ws: WebSocket) { }
+    postMessage(message: any): void {
+        this.ws.send(message)
+    }
 }
 
+
+export function concatenate(arrays: Buffer[]): Buffer {
+    let totalLength = 0;
+    for (const arr of arrays) {
+        totalLength += arr.length;
+    }
+    const result = new Uint8Array(totalLength);
+    let offset = 0;
+    for (const arr of arrays) {
+        result.set(arr, offset);
+        offset += arr.length;
+    }
+    return Buffer.from(result)
+}
+
+
+// RawData is https://github.com/websockets/ws.git
+type RawData = Buffer | ArrayBuffer | Buffer[];
+export function combine(a: RawData): Buffer {
+    if (a instanceof Array) {
+        return concatenate(a)
+    } else if (a instanceof Buffer) {
+        return a
+    }
+    else {
+        return Buffer.from(a)
+    }
+}
 export class Nodefs extends Fs {
     fh = new Map<number, fs.FileHandle>()
     flush(h: number): Promise<void> {

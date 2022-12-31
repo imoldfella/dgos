@@ -1,5 +1,4 @@
 import { generateMnemonic, mnemonicToSeed } from 'bip39'
-import { pki, random } from "node-forge"
 import * as secp from '@noble/secp256k1'
 import { encode, decode } from 'cbor-x'
 import z from 'zod'
@@ -25,6 +24,15 @@ export const Identityz = z.object({
 })
 export type Identity = z.infer<typeof Identityz>
 
+// a way to assign name, blue check, etc. We need audit log for these
+export const Attested = z.object({
+    attribute: z.any(),
+    chain: z.array(Chainz)
+})
+
+// the server only cares about the root id, not the name, and not really the device key
+// The device key will need to sign a random challenge, it can sign the DH key if that's available.
+
 
 const toHex = (a: Uint8Array) => a.reduce((a, b) => a + b.toString(16).padStart(2, '0'), '')
 const fromHex = (hexString: string) =>
@@ -43,8 +51,6 @@ export function loadCbor(s: string) {
 export async function identityFromBip39(s: string): Promise<Identity> {
     const privKey = await secp.utils.sha256((new TextEncoder).encode(s)) //.toString('hex')
     const pubKey = secp.getPublicKey(privKey, true)
-    const prng = random.createInstance()
-
     const msgHash = await secp.utils.sha256(pubKey)
     const sig = await secp.sign(msgHash, privKey)
     const isValid = secp.verify(sig, msgHash, pubKey);
@@ -57,9 +63,7 @@ export async function identityFromBip39(s: string): Promise<Identity> {
             signer: pubKey,
             signature: sig,
         }]
-
     }
-
 }
 
 // 
