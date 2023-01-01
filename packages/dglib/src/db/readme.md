@@ -1,4 +1,14 @@
 
+
+databases need names so that clients can find servers. but you can use a name that's as meaningless and random as you want. 
+
+To maximize convenience you can buy a name on a name server like cr.datagrove.com  then create derivative names db1.cr.datagrove.com. These are called dgns names 
+
+To maximize security, run your own name server on a VPN or tor. You can access the database on your own host this way, or use it as a way to bootstrap a webrtc connection.
+
+see dandelion, nym, tor for ideas on how to build anonymous networks. Tailscale is amazing for a not quite anonymous vpn.
+
+
 only import this if you want the whole database
 use dbclient if you are a client
 

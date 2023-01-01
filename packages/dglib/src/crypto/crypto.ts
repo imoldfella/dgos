@@ -35,8 +35,11 @@ export const Attested = z.object({
 
 
 const toHex = (a: Uint8Array) => a.reduce((a, b) => a + b.toString(16).padStart(2, '0'), '')
-const fromHex = (hexString: string) =>
-    Uint8Array.from(hexString.match(/.{1,2}/g)!.map((byte) => parseInt(byte, 16)));
+const fromHex = (hexString: string) => {
+    if (hexString.length) {
+        return Uint8Array.from(hexString.match(/.{1,2}/g)!.map((byte) => parseInt(byte, 16)))
+    } else return new Uint8Array(0)
+}
 
 export function storeCbor(s: any): string {
     return toHex(encode(s))

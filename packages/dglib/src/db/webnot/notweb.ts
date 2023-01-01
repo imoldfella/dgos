@@ -67,7 +67,6 @@ export class NodePlatform implements Platform {
 // attaching this code to the pre-existing shared webassembly might take some care?
 // this works from node and gets its configuration from environment, maybe eventually a config file?
 export async function createDbms() {
-
     const pages = 16 * 1024
     const nthread = 0
 
@@ -95,13 +94,18 @@ export async function createDbms() {
     }
     // wasmfunc.square(50)
     // for debug maybe we want datagrove.config.ts instead of .env?
-    const id = await loadCbor(process.env.IDENTITY ?? "")
+    const identity = process.env.IDENTITY
+    if (!identity) {
+        console.log("Identity required")
+        process.exit()
+    }
+    const id = await loadCbor(identity)
+    // should do some zod check here.
     const port = process.env.PORT ? parseInt(process.env.PORT) : 8080
     const host = process.env.HOST ?? "example.com"
 
     const os = new NodePlatform(id, host, mem)
     const dbms = await startup(new DbmsSvr(os))
-
 
     // we should set up a heart beat for the host
     os.tryConnect(e=>{
@@ -170,7 +174,7 @@ export class Nodefs extends Fs {
     async handle(n: number) {
         let h = this.fh.get(n)
         if (!h) {
-            h = await fs.open(`${n}`, "rw")
+            h = await fs.open(`${n}`, "w+")
             this.fh.set(n, h)
         }
         return h

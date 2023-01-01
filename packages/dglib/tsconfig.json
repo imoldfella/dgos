@@ -9,6 +9,7 @@
     "esModuleInterop": true,
     "jsx": "preserve",
     "jsxImportSource": "solid-js",
+    "outDir": "./dist",
     "types": [
       "vite/client"
     ],

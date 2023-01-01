@@ -1,3 +1,5 @@
+import { z } from "zod"
+
 // let the client define general triggers?
 export interface RangeDelta<T> {
     added: T[]
@@ -86,4 +88,6 @@ export type Checkpoint = {
 }
 
 
-export z.
+export const xz = z.object({
+
+})
