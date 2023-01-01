@@ -1,13 +1,5 @@
-import * as ts from "typescript";
-import tsvfs from '@typescript/vfs'
-import fs from 'fs'
-import { TextDecoder } from 'util';
 import * as yargs from 'yargs'
-import WebSocket, { WebSocketServer } from 'ws'
-import repl from 'repl'
 import { createDbms } from '../../dglib/src/db/webnot'
-import { PortLike } from "../../dglib/src/db/weblike";
-import { decode, encode } from 'cbor-x';
 import { commit, clientrepl } from "./client";
 import { version } from "./data";
 import dotenv from 'dotenv'
