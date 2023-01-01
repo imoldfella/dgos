@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "forceConsistentCasingInFileNames": true,
     "experimentalDecorators": true,
     "strict": true,
     "target": "ESNext",

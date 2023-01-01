@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "forceConsistentCasingInFileNames": true,
     "experimentalDecorators": true,
     "strict": true,
     "target": "ESNext",
@@ -15,5 +16,6 @@
     ],
     "noEmit": true,
     "isolatedModules": true
-  }
+  },
+  "extends": "../../tsconfig.json"
 }

@@ -1,15 +1,15 @@
 
 import WebSocket from 'ws'
 import repl from 'repl'
-import { decode, encode } from 'cbor-x';
-import { version } from "./data";
-import { Identity, loadCbor } from '../../dglib/src/crypto';
+import { decode, encode } from 'cbor-x'
+import { version } from "./data"
+import { Identity, loadCbor } from '../../dglib/src/crypto'
 import fs from 'fs'
-import { combine } from '../../dglib/src/db/webnot';
+import { combine } from '../../dglib/src/dbserver/nodejs'
 
 export async function clientrepl() {
-  console.log(`dg client ${version},${process.version}`)
-  repl.start("dg>")
+    console.log(`dg client ${version},${process.version}`)
+    repl.start("dg>")
 }
 
 //  var newCollabState = new CollabState(version, unconfirmed);
@@ -38,18 +38,18 @@ export class Client {
     public: Identity
     private: Identity
 
-  // secret is a device key from .env, or localStorage, or from user creating a new one
-  constructor(secret: string) {
-    this.private = loadCbor(secret)
-    this.public = {...this.private}
-    this.public.private = undefined
-  }
+    // secret is a device key from .env, or localStorage, or from user creating a new one
+    constructor(secret: string) {
+        this.private = loadCbor(secret)
+        this.public = { ...this.private }
+        this.public.private = undefined
+    }
 
-  get identity() {
-    return encode({
-      publicKey: new Uint8Array(0)
-    })
-  }
+    get identity() {
+        return encode({
+            publicKey: new Uint8Array(0)
+        })
+    }
 
 }
 
@@ -63,8 +63,8 @@ export class Client {
 // this only for node, browser connects to sharedWorker, but that can't access localstorage
 
 let nextTag = 42
-export  function ask(ws: WebSocket, o: any) : Promise<any>{
-    return new Promise((resolve)=>{
+export function ask(ws: WebSocket, o: any): Promise<any> {
+    return new Promise((resolve) => {
         o.id = nextTag++
         ws.send(encode(o))
         ws.on('message', (e, isBinary) => {
@@ -72,10 +72,10 @@ export  function ask(ws: WebSocket, o: any) : Promise<any>{
             console.log(ox)
             // if the response indicates that its a subscription then we should get the first query anyway. ignore notifications (not our tag.
 
-            if (ox.id==o.id){
+            if (ox.id == o.id) {
                 resolve(ox)
             }
-        })  
+        })
     })
 }
 // eval https://2ality.com/2019/10/eval-via-import.html

@@ -1,5 +1,4 @@
-import { Schema, Tx } from "../db"
-import { Dbms, Query, Statement } from "../db/data"
+
 
 // mostly we want to use insert, merge/upsert, delete, splice that are generated from tables with the compiler
 // these must be compiled and run through a query optimizer. For every transaction statement there is a query against the 
@@ -21,10 +20,13 @@ import { Dbms, Query, Statement } from "../db/data"
 // <s>
 //  
 
-
+export class Query<T>{
+}
+export class Statement<P, T>{
+}
 
 // should we use comlink to wrap the shared worker? that way the user can easily create their own shared worker that includes datagrove.
-export class TxClient implements Tx {
+export class Tx {
     constructor(public db: Db) {
     }
     async commit(): Promise<boolean> {
@@ -76,7 +78,7 @@ export class Db {
         return new StatementClient(await this.ask('prepare', sql))
     }
     async begin(): Promise<Tx> {
-        return new TxClient(this) //this.ask('begin'))
+        return new Tx(this) //this.ask('begin'))
     }
     async query<P, T>(stmt: Statement<P, T>, props: T): Promise<Query<T>> {
         return new QueryClient(this.ask('query', props))
@@ -84,7 +86,7 @@ export class Db {
 }
 
 // call with the URL for your Datagrove enhanced shared worker
-export async function useDb(u: URL, schema: Schema) {
+export async function useDb(u: URL) {
     // note this your application's shared worker, but it should expose Datagrove methods for Db to work. 
     const w = new SharedWorker(u)
     return new Db(w.port)

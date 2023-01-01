@@ -1,6 +1,6 @@
 import * as yargs from 'yargs'
 import dotenv from 'dotenv'
-import { createDbms } from '../../dglib/src/db/webnot'
+import { createDbms } from '../../dglib/src/dbserver/nodejs'
 /*
 import { createDbms } from '../../dglib/src/db/webnot'
 import { commit, clientrepl } from "./client";
