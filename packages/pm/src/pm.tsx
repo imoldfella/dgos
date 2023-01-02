@@ -29,22 +29,28 @@ export async function start() {
 
 // we need to create the view with a 
 export function Editor() {
-  const fn = (tr:Transaction )=>{
 
-  }
   let el: HTMLDivElement
   onMount(() => {
+
+    let edit = EditorState.create({
+      doc: PmParser.fromSchema(mySchema).parse(htmlDoc),
+      plugins: [
+        ...exampleSetup({ schema: mySchema, history: false }),
+        history(),
+        collab({ version: 0 })
+      ],
+      
+    })
+    const fn = (tr:Transaction )=>{
+      // do thi
+      getVersion(edit)
+      const st = sendableSteps(edit)
+    }
+
     let view = new EditorView(el!, {
       dispatchTransaction: fn,
-      state: EditorState.create({
-        doc: PmParser.fromSchema(mySchema).parse(htmlDoc),
-        plugins: [
-          ...exampleSetup({ schema: mySchema, history: false }),
-          history(),
-          collab({ version: 0 })
-        ],
-        
-      }),
+      state: edit
     })
   })
   return <div class="dark:prose-invert prose  max-w-none" ref={el!}></div>
@@ -89,8 +95,6 @@ function recv(edit: EditorState, steps: Step[], ids: string[]){
 }
 
 function snd(edit: EditorState){
-  // do thi
-  getVersion(edit)
-  const st = sendableSteps(edit)
+
 }
 
