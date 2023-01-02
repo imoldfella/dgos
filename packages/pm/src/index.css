@@ -1,0 +1,30 @@
+/* ./src/index.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+textarea::placeholder {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+textarea {
+  resize: none
+}
+
+.server-link-active {
+  border-inline-start: 2px solid rgb(29 78 216) !important
+}
+
+.server-link-active:hover {
+  border-inline-start: 2px solid rgb(59 130 246) !important
+}
+
+.server-link {
+  border-inline-start: 2px solid transparent
+}
+
+.server-link:hover {
+  border-inline-start: 2px solid #FFFFFF
+}

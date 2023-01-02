@@ -1,7 +1,5 @@
 {
-  "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "forceConsistentCasingInFileNames": true,
     "experimentalDecorators": true,
     "strict": true,
     "target": "ESNext",
@@ -11,12 +9,10 @@
     "esModuleInterop": true,
     "jsx": "preserve",
     "jsxImportSource": "solid-js",
+    "types": [
+      "vite/client"
+    ],
     "noEmit": true,
-    "isolatedModules": true,
-    "outDir": "./dist"
-  },
-  "include": [
-    "./src/**/*.ts",
-    "src/worker.mjs",
-  ]
+    "isolatedModules": true
+  }
 }
