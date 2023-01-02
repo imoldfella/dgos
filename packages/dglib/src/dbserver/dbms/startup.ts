@@ -10,9 +10,9 @@ export type StartState = {
     active: number
 }
 
-const checkpointFile = 0 // aka "master record"
-const logFile = 1
-const dataFile = 2
+const checkpointFile = 42 // aka "master record"
+const logFile = 43
+const dataFile = 44
 
 // do I need meta data for the idb files so I can get a directory without 
 
@@ -145,15 +145,19 @@ async function recover(fs: Fs, checkpoint: number) {
 //     return  new Dbms()
 // } 
 export async function startup(d: DbmsSvr) {
-    const fd = await d.os.fs.readFile(checkpointFile)
-    if (fd) {
-        const checkpoint = JSON.parse(fd)
-        recover(d.os.fs, checkpoint)
-    } else {
-        // create an initial empty checkpoint, empty log, empty data
-        d.os.fs.atomicWrite(checkpointFile, JSON.stringify({
-            checkpoint: 0
-        }))
+    try {
+        const fd = await d.os.fs.readFile(checkpointFile)
+        if (fd) {
+            const checkpoint = JSON.parse(fd)
+            recover(d.os.fs, checkpoint)
+        } else {
+            // create an initial empty checkpoint, empty log, empty data
+            d.os.fs.atomicWrite(checkpointFile, JSON.stringify({
+                checkpoint: 0
+            }))
+        }
+    } catch {
+        // we should create an empty state here.
     }
     // here we should start trying to sync with thehost
     d.start()

@@ -184,9 +184,13 @@ export class Nodefs extends Fs {
         fs.writeFile(`${h}`, d)
     }
     async readFile(h: number): Promise<string> {
-        return fs.readFile(`${h}`, {
-            encoding: 'utf8'
-        })
+        try {
+            return fs.readFile(`${h}`, {
+                encoding: 'utf8'
+            })
+        } catch (e) {
+            return ""
+        }
     }
     async write(h: number, d: Uint8Array, at: number): Promise<void> {
         const fh = await this.handle(h)

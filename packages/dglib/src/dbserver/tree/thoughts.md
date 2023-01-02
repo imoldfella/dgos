@@ -1,5 +1,23 @@
 #
 
+bulk transactions can't be done in a frame, but they can lock the database so nothing else can be done anyway. each transaction batch can be bulk or not.
+
+api should mark bulk transactions.
+
+
+what if we used pm machinery to maintain 
+1. predicted value
+2. stable value
+3. uncommitted steps
+
+when uncommitted steps come from server, we apply them directly to the database.
+we also send them to an editor if its open, but not otherwise.
+
+for mvcc we can capture a backward chain of values. the rollback buffers are a sparse map of the changed fields. in the case of pm fields, it holds an old root that we need to clean up.
+
+each pm field is automatically a column family, it 
+
+
 // the advantage of writing a page in place is that we don't need to update the parent.
 // we can still get some of the advantages of compressed pages by sparse files and trimming holes in the file.
 // this is also nice because we can read the entire block and the os will give us 0's.
