@@ -1,6 +1,6 @@
-import { EditorState } from "prosemirror-state"
+import { EditorState, Transaction } from "prosemirror-state"
 import { EditorView } from "prosemirror-view"
-import { Schema, DOMParser as PmParser } from "prosemirror-model"
+import { Schema,Node, DOMParser as PmParser } from "prosemirror-model"
 import { schema } from "prosemirror-schema-basic"
 import { addListNodes } from "prosemirror-schema-list"
 import { exampleSetup } from "prosemirror-example-setup"
@@ -10,7 +10,7 @@ import { collab, receiveTransaction, sendableSteps, getVersion } from "prosemirr
 import { history } from 'prosemirror-history'
 import { subscribe, DgStep } from "./store"
 
-const doc = (new DOMParser()).parseFromString("", "text/html")
+const htmlDoc  = (new DOMParser()).parseFromString("", "text/html")
 
 // Mix the nodes from prosemirror-schema-list into the basic schema to
 // create a schema with list support.
@@ -26,23 +26,71 @@ export async function start() {
 
   })
 }
+
+// we need to create the view with a 
 export function Editor() {
+  const fn = (tr:Transaction )=>{
+
+  }
   let el: HTMLDivElement
   onMount(() => {
-
-
     let view = new EditorView(el!, {
+      dispatchTransaction: fn,
       state: EditorState.create({
-        doc: PmParser.fromSchema(mySchema).parse(doc),
+        doc: PmParser.fromSchema(mySchema).parse(htmlDoc),
         plugins: [
           ...exampleSetup({ schema: mySchema, history: false }),
           history(),
           collab({ version: 0 })
-        ]
+        ],
+        
       }),
     })
   })
   return <div class="dark:prose-invert prose  max-w-none" ref={el!}></div>
 
+}
+
+  // All state changes go through this
+export function  dispatch(view: EditorView, action: {
+  type: string,
+  doc?: Node
+  version?: number,
+  transaction: Transaction
+}) {
+      let state = EditorState.create({
+        doc: action.doc,
+        plugins: exampleSetup({schema, history: false, menuContent: menu.fullMenu}).concat([
+          history(),
+          collab({version: action.version}),
+        ]),
+      })
+
+    view.updateState(state)
+    let el: HTMLDivElement
+
+    const fn = (transaction: Transaction) => {
+      dispatch(view,{
+        type: "transaction", 
+        transaction
+      })
+
+    let v = new EditorView( el!, {
+          state: state,
+          dispatchTransaction: fn,
+        })
+    } 
+  }
+
+
+
+function recv(edit: EditorState, steps: Step[], ids: string[]){
+ receiveTransaction(edit, steps.map(j => Step.fromJSON(schema, j)), ids)
+}
+
+function snd(edit: EditorState){
+  // do thi
+  getVersion(edit)
+  const st = sendableSteps(edit)
 }
 
