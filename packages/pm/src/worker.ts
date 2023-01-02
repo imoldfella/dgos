@@ -1,4 +1,4 @@
-import {} from 'prosemirror-state'
+import { version } from './data'
 
 interface SharedWorkerGlobalScope {
     onconnect: (event: MessageEvent) => void;
@@ -10,63 +10,68 @@ interface Step {
 }
 
 class Pmdoc {
-    steps : Step[] = []
-    listeners = new Map<MessagePort,number>()
+    steps: Step[] = []
+    listeners = new Map<MessagePort, number>()
     // markdown? html? either?
     constructor(content: string) {
     }
-    addListener(p: MessagePort,id: number) {
-        this.listeners.set(p,id)
+    addListener(p: MessagePort, id: number) {
+        this.listeners.set(p, id)
     }
     removeListener(p: MessagePort) {
         this.listeners.delete(p)
     }
     addSteps(st: Step[]) {
-        this.steps = [this.steps,...st];
-        for (let [k,v] of this.listeners) {
+        this.steps = [this.steps, ...st];
+        for (let [k, v] of this.listeners) {
             k.postMessage({
                 id: v,
-                params:  st
+                result: st
             })
         }
     }
 }
 
 const doc = new Map<string, Pmdoc>()
-doc.set('test', 
+doc.set('test',
     new Pmdoc("<p>hello, world</p>")
 )
 
 interface Rpc<T> {
     port: MessagePort
-    method: string, 
+    method: string,
     id: number,
     params: T
 }
 
-const registry = new Map<string, (port: MessagePort, rpc: Rpc<any>)=>Promise<void>>()
+const registry = new Map<string, (port: MessagePort, rpc: Rpc<any>) => Promise<void>>()
 
 
 registry.set('subscribe', async (port: MessagePort, rpc: Rpc<{
-    id: string,
-    step: number
-}>)=>{
-    const o = doc.get(rpc.params.id)
-    if (o) {
+    topic: string,
+    version: number
+}>) => {
+    let o = doc.get(rpc.params.topic)
+    if (!o) {
+        o = new Pmdoc("")
+        doc.set(rpc.params.topic, o)
+    }
+    if (o.steps.length < rpc.params.version) {
         port.postMessage({
             id: rpc.id,
-            result: o.steps
+            error: `${rpc.params.topic} is only ${o.steps.length} long`
         })
-        o.addListener(port, rpc.id)
-    } else {
-        doc.set(rpc.params.id, new Pmdoc(""))
+        return
     }
+    port.postMessage({
+        id: rpc.id,
+        result: o.steps.slice(rpc.params.version)
+    })
+    o.addListener(port, rpc.id)
+
 })
-registry.set('close', async (port: MessagePort, rpc: Rpc<{
-    id: string,
-    step: number
-}>)=>{
-    const o = doc.get(rpc.params.id)
+registry.set('close', async (port: MessagePort, rpc: Rpc<string>) => {
+    const o = doc.get(rpc.params)
     if (o) {
         o.removeListener(port)
     }
@@ -78,7 +83,7 @@ registry.set('publish', async (port: MessagePort, rpc: Rpc<{
     id: string,
     lsn: number,
     steps: Step[]
-}>)=>{
+}>) => {
     const o = doc.get(rpc.params.id)
     if (!o) {
         port.postMessage({
@@ -87,12 +92,12 @@ registry.set('publish', async (port: MessagePort, rpc: Rpc<{
         })
     }
     else {
-      if( rpc.params.lsn==o.steps.length) {
-        o.addSteps(rpc.params.steps)
-        port.postMessage({
-            id: rpc.id,
-            result: o.steps.length
-        })
+        if (rpc.params.lsn == o.steps.length) {
+            o.addSteps(rpc.params.steps)
+            port.postMessage({
+                id: rpc.id,
+                result: o.steps.length
+            })
         } else {
             port.postMessage({
                 id: rpc.id,
@@ -104,18 +109,18 @@ registry.set('publish', async (port: MessagePort, rpc: Rpc<{
 
 _self.onconnect = (e) => {
     const port = e.ports[0];
-  
-    port.addEventListener('message', (e) => {
-      const workerResult = `Result: ${e.data[0] + e.data[1]}`;
-      port.postMessage(workerResult);
-      console.log(e.data, workerResult)
 
-      const rpc = registry.get(e.data.method)
-      if (rpc) {
-        rpc(port, e.data)
-      }
+    port.addEventListener('message', (e) => {
+        const workerResult = `Result: ${e.data[0] + e.data[1]}`;
+        port.postMessage(workerResult);
+        console.log(e.data, workerResult)
+
+        const rpc = registry.get(e.data.method)
+        if (rpc) {
+            rpc(port, e.data)
+        }
     });
-  
+
     port.start(); // Required when using addEventListener. Otherwise called implicitly by onmessage setter.
-  }
+}
 console.log("dbms started")

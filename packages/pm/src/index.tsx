@@ -8,12 +8,11 @@ import { Editor } from './pm'
 
 import { dbms } from './store'
 
-
 async function init() {
   console.log(dbms)
   render(() =>
   (<div>
-    <Editor/>
-    </div>), document.getElementById('app') as HTMLElement)
+    <Editor />
+  </div>), document.getElementById('app') as HTMLElement)
 }
 init()
