@@ -13,6 +13,8 @@ async function init() {
   render(() =>
   (<div>
     <Editor />
+
+    <Editor />
   </div>), document.getElementById('app') as HTMLElement)
 }
 init()

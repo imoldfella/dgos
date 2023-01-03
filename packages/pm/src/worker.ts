@@ -1,9 +1,5 @@
 import { version } from './data'
 
-interface SharedWorkerGlobalScope {
-    onconnect: (event: MessageEvent) => void;
-}
-const _self: SharedWorkerGlobalScope = self as any;
 
 interface Step {
 
@@ -107,6 +103,11 @@ registry.set('publish', async (port: MessagePort, rpc: Rpc<{
     }
 })
 
+interface SharedWorkerGlobalScope {
+    onconnect: (event: MessageEvent) => void;
+}
+const _self: SharedWorkerGlobalScope = self as any;
+
 _self.onconnect = (e) => {
     const port = e.ports[0];
 
@@ -123,4 +124,3 @@ _self.onconnect = (e) => {
 
     port.start(); // Required when using addEventListener. Otherwise called implicitly by onmessage setter.
 }
-console.log("dbms started")

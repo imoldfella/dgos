@@ -42,7 +42,7 @@ export interface DgStep {
 // because this is a shared worker, we can't really lose steps?
 
 
-export function subscribe(topic: string, version: number, then: (steps: DgStep[]) => void): [number, string] {
+export function subscribe<T>(topic: string, version: number, then: (a: T) => void): [number, string] {
     const tag = nextTag++
     reply.set(tag, [then, then, true])
     dbms.port.postMessage({
