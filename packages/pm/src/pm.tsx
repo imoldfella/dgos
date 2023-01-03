@@ -7,7 +7,6 @@ import { exampleSetup } from "prosemirror-example-setup"
 import { JSXElement, onMount } from "solid-js"
 import { Step } from "prosemirror-transform"
 import { history } from 'prosemirror-history'
-import { subscribe, DgStep } from "./store"
 import { collab, receiveTransaction, sendableSteps, getVersion } from "prosemirror-collab"
 
 const htmlDoc = (new DOMParser()).parseFromString("", "text/html")

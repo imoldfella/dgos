@@ -1,11 +1,52 @@
-import { version } from './data'
+import { version, Rect } from './data'
+
+// lives in shared worker? we need at least a proxy in the client?
+// the database will need some concept of what is active, and ui's generally think of things as n-dimensional vectors
+
+
+// most objects can be shared, so their data model is instantiated in the SharedWorker and accessed by proxy in the ui threads.
+
+// getting data is mostly async, so support suspense? client can't know how long things take, although for the most part won't wait? signals are the most basic form of subscription, but we can build on that? would the explicit load status be a better fit? then we can have partial displays.
+// we have lazy for dynamic import("") for lightly used components.
+
+
+
+
+type GridListener<T> = (cell: {x: number,y:number,key: string,value: T}[]) => void
+// tracks the range that is being viewed.
+class GridView<T> {
+    constructor(public rect: Rect, public gs: GridSource<T>){
+    }
+   
+    splice(dim: number, start: number, deleteCount=1, ...item: number[]){
+        
+    }
+}
+export class GridSource<T> {
+    view = new Set<GridView<T>>()
+
+    splice(dim: number, start: number, deleteCount=1, ...item: number[]){
+
+    }
+    hide(dim: number, start: number, end: number) {
+    }
+    addListener(v: GridView<T> ) {
+
+    }
+
+    // notifier gridviews if their relevent cells have been changed.
+    invalidate(g: Rect) {
+
+    }
+}
+
 
 
 interface Step {
 
 }
 
-class Pmdoc {
+class Pmcell {
     steps: Step[] = []
     listeners = new Map<MessagePort, number>()
     // markdown? html? either?
@@ -28,9 +69,9 @@ class Pmdoc {
     }
 }
 
-const doc = new Map<string, Pmdoc>()
+const doc = new Map<string, Pmcell>()
 doc.set('test',
-    new Pmdoc("<p>hello, world</p>")
+    new Pmcell("<p>hello, world</p>")
 )
 
 interface Rpc<T> {
@@ -49,7 +90,7 @@ registry.set('subscribe', async (port: MessagePort, rpc: Rpc<{
 }>) => {
     let o = doc.get(rpc.params.topic)
     if (!o) {
-        o = new Pmdoc("")
+        o = new Pmcell("")
         doc.set(rpc.params.topic, o)
     }
     if (o.steps.length < rpc.params.version) {
