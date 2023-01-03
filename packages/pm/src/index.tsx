@@ -12,9 +12,9 @@ async function init() {
   console.log(dbms)
   render(() =>
   (<div>
-    <Editor />
+    <Editor id='1' />
 
-    <Editor />
+    <Editor id='2' />
   </div>), document.getElementById('app') as HTMLElement)
 }
 init()
