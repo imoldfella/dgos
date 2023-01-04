@@ -11,7 +11,7 @@ import { dbms } from "./worker_proxy"
 // this will make it easier to support react.
 
 
-// a uri can be a query, although having a query time could give us better typing.
+// a uri can be a query, although having a query type could give us better typing.
 
 // a connection to the shared worker is generall [port, handle], but could have some comlink type proxying as well. zod?
 
