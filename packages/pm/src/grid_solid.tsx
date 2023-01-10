@@ -23,7 +23,7 @@ import { dbms } from "./worker_proxy"
 // the grid source will describe how it want's to be displayed
 
 export function Grid(props: {handle: number}) {
-    const s = new GridBase(props.handle)
+    const s = new GridBase(props.handle, [0,0], 1)
     const div: HTMLDivElement[] = []
 
     let el: HTMLDivElement

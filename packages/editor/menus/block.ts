@@ -1,0 +1,194 @@
+import {
+  BlockQuoteIcon,
+  BulletedListIcon,
+  CodeIcon,
+  Heading1Icon,
+  Heading2Icon,
+  Heading3Icon,
+  HorizontalRuleIcon,
+  OrderedListIcon,
+  PageBreakIcon,
+  TableIcon,
+  TodoListIcon,
+  ImageIcon,
+  StarredIcon,
+  WarningIcon,
+  InfoIcon,
+  LinkIcon,
+  MathIcon,
+  
+
+ 
+} from "../icons";
+import { MapIcon, ChartBarSquareIcon, PresentationChartBarIcon } from '@heroicons/react/24/solid'
+import { MenuItem } from "../types";
+import baseDictionary from "../dictionary";
+
+const SSR = typeof window === "undefined";
+const isMac = !SSR && window.navigator.platform === "MacIntel";
+const mod = isMac ? "⌘" : "ctrl";
+
+export default function blockMenuItems(
+  dictionary: typeof baseDictionary
+): MenuItem[] {
+  return [
+    {
+      name: "heading",
+      title: dictionary.h1,
+      keywords: "h1 heading1 title",
+      icon: Heading1Icon,
+      shortcut: "^ ⇧ 1",
+      attrs: { level: 1 },
+    },
+    {
+      name: "heading",
+      title: dictionary.h2,
+      keywords: "h2 heading2",
+      icon: Heading2Icon,
+      shortcut: "^ ⇧ 2",
+      attrs: { level: 2 },
+    },
+    {
+      name: "heading",
+      title: dictionary.h3,
+      keywords: "h3 heading3",
+      icon: Heading3Icon,
+      shortcut: "^ ⇧ 3",
+      attrs: { level: 3 },
+    },
+    {
+      name: "separator",
+    },
+    {
+      name: "checkbox_list",
+      title: dictionary.checkboxList,
+      icon: TodoListIcon,
+      keywords: "checklist checkbox task",
+      shortcut: "^ ⇧ 7",
+    },
+    {
+      name: "bullet_list",
+      title: dictionary.bulletList,
+      icon: BulletedListIcon,
+      shortcut: "^ ⇧ 8",
+    },
+    {
+      name: "ordered_list",
+      title: dictionary.orderedList,
+      icon: OrderedListIcon,
+      shortcut: "^ ⇧ 9",
+    },
+    {
+      name: "separator",
+    },
+    {
+      name: "table",
+      title: dictionary.table,
+      icon: TableIcon,
+      attrs: { rowsCount: 3, colsCount: 3 },
+    },
+    {
+      name: "blockquote",
+      title: dictionary.quote,
+      icon: BlockQuoteIcon,
+      shortcut: `${mod} ]`,
+    },
+    {
+      name: "code_block",
+      title: dictionary.codeBlock,
+      icon: CodeIcon,
+      shortcut: "^ ⇧ \\",
+      keywords: "script",
+    },
+    {
+      name: "hr",
+      title: dictionary.hr,
+      icon: HorizontalRuleIcon,
+      shortcut: `${mod} _`,
+      keywords: "horizontal rule break line",
+    },
+    {
+      name: "hr",
+      title: dictionary.pageBreak,
+      icon: PageBreakIcon,
+      keywords: "page print break line",
+      attrs: { markup: "***" },
+    },
+    {
+      name: "image",
+      title: dictionary.image,
+      icon: ImageIcon,
+      keywords: "picture photo",
+    },
+    {
+      name: "link",
+      title: dictionary.link,
+      icon: LinkIcon,
+      shortcut: `${mod} k`,
+      keywords: "link url uri href",
+    },
+    {
+      name: "separator",
+    },
+    {
+      name: "container_notice",
+      title: dictionary.infoNotice,
+      icon: InfoIcon,
+      keywords: "container_notice card information",
+      attrs: { style: "info" },
+    },
+    {
+      name: "container_notice",
+      title: dictionary.warningNotice,
+      icon: WarningIcon,
+      keywords: "container_notice card error",
+      attrs: { style: "warning" },
+    },
+    {
+      name: "container_notice",
+      title: dictionary.tipNotice,
+      icon: StarredIcon,
+      keywords: "container_notice card suggestion",
+      attrs: { style: "tip" },
+    },
+    {
+      name: "separator",
+    },
+    {name: "code_block",
+    title: dictionary.math,
+    icon: MathIcon,
+    keywords: "code_block katex math",
+    shortcut: "^ ⇧ $",
+    attrs: {
+      language: 'katex'
+    }
+  },
+    {name: "code_block",
+    title: 'Frappe',
+    icon: MathIcon,
+    keywords: "code_block katex math",
+    shortcut: "^ ⇧ c",
+    attrs: {
+      language: 'frappe'
+    },
+   },
+   ,
+    {name: "code_block",
+    title: 'Vega-lite',
+    icon: MathIcon,
+    keywords: "code_block katex math",
+    shortcut: "^ ⇧ v",
+    attrs: {
+      language: 'vega-lite'
+    },
+   },{name: "code_block",
+   title: 'MapLibre',
+   icon: MapIcon,
+   keywords: "code_block map ",
+   shortcut: "^ ⇧ w",
+   attrs: {
+     language: 'maplibre'
+   },
+  },
+  ];
+}
