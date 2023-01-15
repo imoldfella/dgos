@@ -23,6 +23,7 @@ const mySchema = new Schema({
 
 let views = new Map<string, EditorView>()
 
+// repeat(x,3) -> [x,x,x]
 function repeat<T>(x: T, length: number) {
     const r: T[] = []
     for (let i = 0; i != length; i++) {
@@ -45,6 +46,7 @@ const fromShared = (tx: Transaction, id: string) => {
         return
     }
 
+    // get a lock and don't apply transaction? The problem is prosemirror has already build the transaction and won't be able to do anything with it without transforming it.
     r.updateState(r.state.apply(tx))
     let snd = sendableSteps(r.state)
     if (!snd || !snd.steps) {
