@@ -28,6 +28,13 @@ async function main() {
       },
     })
     .command({
+      command: 'build',
+      describe: 'Build a static website from a dg build file',
+      handler: async parsed => {
+        console.log("hello")
+      },
+    })
+    .command({
       command: 'server',
       aliases: ['s'],
       describe: 'datagrove server',
